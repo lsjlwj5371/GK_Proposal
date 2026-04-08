@@ -179,37 +179,179 @@ async function extractDominantColors(imageBuffer, topN = 5) {
 }
 
 // ─────────────────────────────────────────────────
-// 4. 6:3:1 팔레트 생성
+// 4. 색상 조화 규칙 (Adobe Color Harmony 기반)
 // ─────────────────────────────────────────────────
+
+/**
+ * Adobe Color의 색상 조화 규칙(Color Harmony Rules)을 기반으로
+ * 주어진 기준 색상에 대해 조화로운 보조 색상을 생성합니다.
+ *
+ * ★ 핵심 원칙:
+ *   - 메인 색상(DOM): 브랜드/대상의 CI 색상 그대로 사용
+ *   - 보조 색상(SEC, ACC): 브랜드 색상에서 파생하지 않고,
+ *     색상 조화 이론에 따라 메인과 함께 썼을 때 가장 적절한 독립적 색상을 선택
+ *
+ * @see https://color.adobe.com/create/color-wheel
+ */
+
+const COLOR_HARMONIES = {
+  /**
+   * Split-Complementary (분할보색)
+   * - 보색(180°)의 양쪽 이웃 색상을 사용
+   * - 보색보다 부드럽지만 충분한 대비 → 비즈니스 제안서에 가장 적합
+   * - SEC: 기준색 +150°, ACC: 기준색 +210°
+   */
+  splitComplementary: (h) => ({
+    sec: (h + 150) % 360,
+    acc: (h + 210) % 360,
+    name: "Split-Complementary",
+    description: "보색의 양쪽 이웃 — 세련된 대비감"
+  }),
+
+  /**
+   * Triadic (삼각조화)
+   * - 색상환에서 120° 간격의 세 색상
+   * - 에너지 넘치는 느낌, 대비가 강함 → 스포츠, 이벤트, 역동적 제안서
+   */
+  triadic: (h) => ({
+    sec: (h + 120) % 360,
+    acc: (h + 240) % 360,
+    name: "Triadic",
+    description: "120° 등간격 — 역동적이고 활기찬"
+  }),
+
+  /**
+   * Complementary (보색)
+   * - 색상환에서 정반대(180°) 색상 + 30° 이웃
+   * - 강한 대비, 주목도 높음 → KPI 강조, 성과 발표
+   */
+  complementary: (h) => ({
+    sec: (h + 180) % 360,
+    acc: (h + 150) % 360,
+    name: "Complementary",
+    description: "정반대 보색 — 강한 대비와 주목도"
+  }),
+
+  /**
+   * Analogous + Complement (유사색 + 보색 포인트)
+   * - SEC는 이웃 색상(조화로움), ACC는 보색(강조 포인트)
+   * - 안정적이면서도 포인트가 있음 → 격식 있는 공식 제안서
+   */
+  analogousComplement: (h) => ({
+    sec: (h + 30) % 360,
+    acc: (h + 180) % 360,
+    name: "Analogous + Complement",
+    description: "유사색 안정감 + 보색 포인트"
+  }),
+
+  /**
+   * Square (정사각 조화)
+   * - 색상환에서 90° 간격 중 2개 선택
+   * - 다채로운 느낌 → 크리에이티브, 문화 행사
+   */
+  square: (h) => ({
+    sec: (h + 90) % 360,
+    acc: (h + 270) % 360,
+    name: "Square",
+    description: "90° 간격 — 다채롭고 풍부한"
+  }),
+};
+
+/**
+ * 제안서 주제/분위기에 따라 가장 적합한 색상 조화 규칙을 추천합니다.
+ *
+ * @param {string} [mood] - 분위기 키워드
+ *   "professional" → Split-Complementary (기본값)
+ *   "dynamic"/"sports"/"energy" → Triadic
+ *   "bold"/"impact"/"kpi" → Complementary
+ *   "formal"/"official"/"government" → Analogous + Complement
+ *   "creative"/"culture"/"event" → Square
+ * @returns {string} COLOR_HARMONIES의 키
+ */
+function selectHarmonyRule(mood = "professional") {
+  const moodMap = {
+    professional: "splitComplementary",
+    corporate: "splitComplementary",
+    business: "splitComplementary",
+    dynamic: "triadic",
+    sports: "triadic",
+    energy: "triadic",
+    esports: "triadic",
+    bold: "complementary",
+    impact: "complementary",
+    kpi: "complementary",
+    formal: "analogousComplement",
+    official: "analogousComplement",
+    government: "analogousComplement",
+    creative: "square",
+    culture: "square",
+    event: "square",
+    festival: "square",
+  };
+
+  const key = Object.keys(moodMap).find(k =>
+    mood.toLowerCase().includes(k)
+  );
+  return moodMap[key] || "splitComplementary";
+}
 
 /**
  * 주요 색상으로부터 6:3:1 팔레트를 자동 산출합니다.
  *
+ * ★ 색상 생성 원칙:
+ *   1. DOM(60%): 브랜드 CI 색상 그대로 → 로고에서 추출하거나 사용자 지정
+ *   2. SEC(30%): DOM과 독립적인 색상 → 색상 조화 이론(Adobe Color)으로 선택
+ *   3. ACC(10%): DOM과 독립적인 색상 → 색상 조화 이론(Adobe Color)으로 선택
+ *   → SEC/ACC는 브랜드 색상의 밝기/채도 변형이 아닌, 색상환에서 조화 규칙에 따른 별도 색상
+ *
  * @param {string} dominantHex - 브랜드 핵심 색상 (예: "2E3092")
- * @param {string} [accentOverride] - 사용자가 직접 지정한 ACCENT 색상 (선택)
+ * @param {Object} [options] - 옵션
+ * @param {string} [options.accent] - 사용자가 직접 지정한 ACCENT 색상
+ * @param {string} [options.secondary] - 사용자가 직접 지정한 SECONDARY 색상
+ * @param {string} [options.mood] - 분위기 (색상 조화 규칙 선택에 사용)
+ * @param {string} [options.harmony] - 직접 조화 규칙 지정 (splitComplementary, triadic, etc.)
  * @returns {Object} 팔레트 객체
  */
-function generatePalette(dominantHex, accentOverride) {
+function generatePalette(dominantHex, options = {}) {
+  // 이전 API 호환성: 두번째 인자가 문자열이면 accentOverride로 처리
+  if (typeof options === "string") {
+    options = { accent: options };
+  }
+
   const dom = hexToRgb(dominantHex);
   const hsl = rgbToHsl(dom.r, dom.g, dom.b);
 
-  // DOMINANT (60%) — 원본 그대로
-  const DOM = dominantHex.toUpperCase();
+  // ── DOMINANT (60%) — 브랜드 CI 색상 그대로 ──
+  const DOM = dominantHex.replace("#", "").toUpperCase();
 
-  // SECONDARY (30%) — 같은 색조, 채도↓ 밝기↑
-  const SEC = hslToHex(hsl.h, Math.min(hsl.s * 0.7, 80), Math.min(hsl.l + 25, 75));
+  // ── 색상 조화 규칙 선택 ──
+  const harmonyKey = options.harmony || selectHarmonyRule(options.mood || "professional");
+  const harmony = COLOR_HARMONIES[harmonyKey](hsl.h);
 
-  // ACCENT (10%) — 보색 또는 황금색 계열
-  let ACC;
-  if (accentOverride) {
-    ACC = accentOverride.replace("#", "").toUpperCase();
+  // ── SECONDARY (30%) — 조화 규칙 기반 독립 색상 ──
+  let SEC;
+  if (options.secondary) {
+    SEC = options.secondary.replace("#", "").toUpperCase();
   } else {
-    // 보색(180도 회전) 기반이되, 채도와 밝기를 따뜻하게 조정
-    const accH = (hsl.h + 40) % 360;  // 약간 비켜서 더 자연스러운 대비
-    ACC = hslToHex(accH, Math.min(hsl.s * 0.85, 90), Math.max(hsl.l, 55));
+    // 색상 조화 규칙에서 산출된 Hue를 사용하되,
+    // 채도는 DOM과 비슷한 수준, 밝기는 약간 밝게 (배경·카드 용도이므로)
+    const secS = Math.min(Math.max(hsl.s * 0.75, 30), 80);
+    const secL = Math.min(Math.max(hsl.l + 10, 40), 65);
+    SEC = hslToHex(harmony.sec, secS, secL);
   }
 
-  // 파생 색상들
+  // ── ACCENT (10%) — 조화 규칙 기반 독립 강조 색상 ──
+  let ACC;
+  if (options.accent) {
+    ACC = options.accent.replace("#", "").toUpperCase();
+  } else {
+    // ACC는 눈에 띄어야 하므로 채도 높고 밝기는 중상
+    const accS = Math.min(Math.max(hsl.s * 0.9, 50), 95);
+    const accL = Math.min(Math.max(hsl.l, 45), 60);
+    ACC = hslToHex(harmony.acc, accS, accL);
+  }
+
+  // ── 파생 색상들 (DOM 기반으로 통일감 유지) ──
   const DK = hslToHex(hsl.h, Math.min(hsl.s * 0.8, 60), 10);        // DARK_BG
   const LT = hslToHex(hsl.h, Math.max(hsl.s * 0.15, 5), 96);         // LIGHT_BG
   const CD = hslToHex(hsl.h, Math.max(hsl.s * 0.12, 3), 95);         // CARD_BG
@@ -225,6 +367,8 @@ function generatePalette(dominantHex, accentOverride) {
     // 메타 정보
     _source: dominantHex,
     _hsl: hsl,
+    _harmony: harmony.name,
+    _harmonyDescription: harmony.description,
   };
 }
 
@@ -349,13 +493,16 @@ async function generateDecorativeBg(baseColor, type = "cover") {
  *
  * @param {string} companyName - 회사명 (한국어 가능)
  * @param {string} [domain] - 회사 도메인 (없으면 로고 수집 건너뜀)
- * @param {Object} [overrides] - 수동 오버라이드 { dominant, accent }
+ * @param {Object} [overrides] - 수동 오버라이드
+ *   { dominant, accent, secondary, mood, harmony }
+ *   - mood: "professional"|"dynamic"|"sports"|"bold"|"formal"|"creative"
+ *   - harmony: "splitComplementary"|"triadic"|"complementary"|"analogousComplement"|"square"
  * @returns {Object} 브랜드 분석 결과
  *
  * @example
- * const brand = await analyzeBrand("현대자동차", "hyundai.com");
+ * const brand = await analyzeBrand("현대자동차", "hyundai.com", { mood: "professional" });
  * console.log(brand.palette.DOM); // "002C5F"
- * console.log(brand.gradients.cover); // "image/png;base64,..."
+ * console.log(brand.palette._harmony); // "Split-Complementary"
  */
 async function analyzeBrand(companyName, domain, overrides = {}) {
   console.log(`[BrandAnalyzer] 브랜드 분석 시작: ${companyName}`);
@@ -390,12 +537,17 @@ async function analyzeBrand(companyName, domain, overrides = {}) {
     console.log(`[BrandAnalyzer] 기본 색상 사용: #${dominantHex}`);
   }
 
-  // ── Step 3: 팔레트 생성 ──
-  const palette = generatePalette(dominantHex, overrides.accent);
-  console.log(`[BrandAnalyzer] 6:3:1 팔레트 생성 완료:`);
-  console.log(`  DOMINANT (60%): #${palette.DOM}`);
-  console.log(`  SECONDARY(30%): #${palette.SEC}`);
-  console.log(`  ACCENT   (10%): #${palette.ACC}`);
+  // ── Step 3: 팔레트 생성 (Adobe Color Harmony 기반) ──
+  const palette = generatePalette(dominantHex, {
+    accent: overrides.accent,
+    secondary: overrides.secondary,
+    mood: overrides.mood,
+    harmony: overrides.harmony,
+  });
+  console.log(`[BrandAnalyzer] 6:3:1 팔레트 생성 완료 (${palette._harmony}):`);
+  console.log(`  DOMINANT (60%): #${palette.DOM}  ← 브랜드 CI`);
+  console.log(`  SECONDARY(30%): #${palette.SEC}  ← ${palette._harmony} 조화색`);
+  console.log(`  ACCENT   (10%): #${palette.ACC}  ← ${palette._harmony} 강조색`);
   console.log(`  DARK_BG:  #${palette.DK}  |  LIGHT_BG: #${palette.LT}`);
   console.log(`  CARD_BG:  #${palette.CD}  |  SUBTLE:   #${palette.SB}`);
 
@@ -455,6 +607,8 @@ module.exports = {
   generateDecorativeBg,
   fetchLogo,
   extractDominantColors,
+  selectHarmonyRule,
+  COLOR_HARMONIES,
   // 유틸리티 (외부에서 필요할 수 있음)
   hexToRgb, rgbToHex, rgbToHsl, hslToRgb, hslToHex,
 };
