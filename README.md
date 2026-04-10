@@ -14,7 +14,9 @@
 | **목적** | 제안서 PPT 제작 프로세스를 자동화하여 품질은 높이고 작업 시간은 줄이기 |
 | **기술 스택** | Claude Code Skill, Node.js, pptxgenjs, Claude API (Vision + Text) |
 | **슬라이드 규격** | A4 가로 (11.69 x 8.27 inches), Pretendard 폰트 |
-| **디자인 시스템** | Adobe Color Harmony 기반 6:3:1 팔레트, 검증된 레이아웃 컴포넌트 5종 |
+| **디자인 시스템** | Adobe Color Harmony 기반 6:3:1 팔레트, 검증된 레이아웃 컴포넌트 5종 + Zone-based 멀티 컴포넌트 |
+| **구조 다양성** | 카드/표/순서도/허브-스포크/벤/간트/타임라인/체크리스트 8종 혼용 (AP-22) |
+| **안티패턴** | AP-01~22 실전 피드백 기반 (AI 생성물 티 제거 + 구조 다양성 강제) |
 
 ---
 
@@ -27,8 +29,10 @@
 - [x] Phase 3.5: 자체 검수 (코드 레벨 QA)
 - [x] Phase 4: 시각 QA (Claude Vision 기반)
 - [x] 레이아웃 컴포넌트 5종 (표지, 간지, 카드 그리드, 강조 본문, 마무리)
+- [x] **Zone-based 멀티 컴포넌트 레이아웃** (`patterns/layouts/zone_helper.js` — split.LR/TB/TMB/grid2x2/mainAside)
 - [x] 아이콘 시스템 (606개 Lineicons SVG)
-- [x] 안티패턴 가이드라인 (AP-01~04)
+- [x] **안티패턴 가이드라인 (AP-01~22)** — 실전 피드백 기반 지속 확장
+- [x] **구조 다양성 규칙** (AP-22): 8가지 시각 구조 체크리스트, LR 40%+ 강제
 - [ ] 실전 테스트 및 피드백 반영 반복 중
 
 ---
@@ -109,6 +113,8 @@ gk-proposal/
 │   └── 02_제작시나리오_가이드.md  # 43개 템플릿, 조합 패턴, 품질 체크리스트
 ├── patterns/
 │   ├── pattern_index.json      # 콘텐츠 유형 → 추천 패턴 매핑
+│   ├── layouts/
+│   │   └── zone_helper.js      # Zone-based 분할 (split.LR/TB/TMB/grid2x2/mainAside + sub.cols/rows)
 │   └── components/
 │       ├── cover.js            # 표지 (미니멀 / 시네마틱)
 │       ├── divider.js          # 간지 (센터 / 사이드바 / 이미지분할 / 브랜드그래픽)
