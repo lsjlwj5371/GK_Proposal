@@ -184,8 +184,12 @@ function _coverCinematic(sl, pptx, { title, subtitle, label, companyName, date, 
   const { DOM, SEC, DK } = palette;
 
   // ── Background: image + dark overlay, or solid dark ──
+  // Use addImage (base64 embed) instead of sl.background (link) to avoid
+  // path-resolution failures with Korean / OneDrive paths.
   if (bgImage) {
-    sl.background = { path: bgImage };
+    sl.background = { fill: DK || "0D0D1A" };
+    const imgArg = (bgImage.startsWith("image/") || bgImage.startsWith("data:")) ? { data: bgImage } : { path: bgImage };
+    sl.addImage({ ...imgArg, x: 0, y: 0, w: SW, h: SH, sizing: { type: "cover", w: SW, h: SH } });
     // Dark overlay
     sl.addShape(pptx.shapes.RECTANGLE, {
       x: 0,
@@ -290,27 +294,7 @@ function _coverCinematic(sl, pptx, { title, subtitle, label, companyName, date, 
     });
   }
 
-  // ── Event/theme graphic placeholder (faint dashed rect, right side) ──
-  sl.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-    x: SW - 3.5,
-    y: SH - 3.0,
-    w: 2.8,
-    h: 2.0,
-    rectRadius: 0.12,
-    fill: { color: "FFFFFF", transparency: 95 },
-    line: { color: "FFFFFF", width: 0.6, dashType: "dash", transparency: 70 },
-  });
-  sl.addText("Graphic\nPlaceholder", {
-    x: SW - 3.5,
-    y: SH - 3.0,
-    w: 2.8,
-    h: 2.0,
-    fontSize: 10,
-    fontFace: FN_TN,
-    color: "666666",
-    align: "center",
-    valign: "middle",
-  });
+  // ── (placeholder dashed rect removed — was visible artifact in real PPTs) ──
 }
 
 // ---------------------------------------------------------------------------
@@ -319,10 +303,20 @@ function _coverCinematic(sl, pptx, { title, subtitle, label, companyName, date, 
 
 /**
  * Rough text width estimator (inches) for badge sizing.
- * Assumes ~0.07in per character at 10pt baseline, scales linearly.
+ * Korean (CJK) characters are ~1.4× wider than ASCII at the same font size.
+ * Returns padding-inclusive badge width.
  */
 function _textWidth(text, fontSize) {
   if (!text) return 1.0;
-  const charWidth = 0.07 * (fontSize / 10);
-  return Math.max(text.length * charWidth, 0.6);
+  let units = 0;
+  for (const ch of text) {
+    // CJK Unified, Hangul Syllables, Hangul Jamo, CJK Symbols
+    if (/[\u3000-\u303F\u3130-\u318F\uAC00-\uD7AF\u4E00-\u9FFF\uFF00-\uFFEF]/.test(ch)) {
+      units += 1.4;
+    } else {
+      units += 0.55;
+    }
+  }
+  const charWidth = 0.075 * (fontSize / 10);
+  return Math.max(units * charWidth, 0.8);
 }

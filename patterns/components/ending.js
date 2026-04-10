@@ -153,8 +153,12 @@ function _endingCinematic(sl, pptx, { tyText, promiseText, companyName, proposal
   const { DOM, SEC, ACC, DK } = palette;
 
   // ── Background: image + dark overlay, or solid dark ──
+  // Use addImage (base64 embed) instead of sl.background (link) to avoid
+  // path-resolution failures with Korean / OneDrive paths.
   if (bgImage) {
-    sl.background = { path: bgImage };
+    sl.background = { fill: DK || "0D0D1A" };
+    const imgArg = (bgImage.startsWith("image/") || bgImage.startsWith("data:")) ? { data: bgImage } : { path: bgImage };
+    sl.addImage({ ...imgArg, x: 0, y: 0, w: SW, h: SH, sizing: { type: "cover", w: SW, h: SH } });
     sl.addShape(pptx.shapes.RECTANGLE, {
       x: 0,
       y: 0,
@@ -167,44 +171,25 @@ function _endingCinematic(sl, pptx, { tyText, promiseText, companyName, proposal
     sl.background = { fill: DK || "0D0D1A" };
   }
 
-  // ── Image placeholder area (top portion, faint) ──
-  if (!bgImage) {
-    sl.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
-      x: 1.5,
-      y: 0.6,
-      w: SW - 3.0,
-      h: SH * 0.28,
-      rectRadius: 0.1,
-      fill: { color: "FFFFFF", transparency: 94 },
-      line: { color: "FFFFFF", width: 0.4, dashType: "dash", transparency: 80 },
-    });
-    sl.addText("Image Placeholder", {
-      x: 1.5,
-      y: 0.6,
-      w: SW - 3.0,
-      h: SH * 0.28,
-      fontSize: 10,
-      fontFace: FN_TN,
-      color: "555555",
-      align: "center",
-      valign: "middle",
-    });
-  }
+  // ── (image placeholder removed — was visible artifact in real PPTs) ──
 
   // ── Main thank-you text - centered, white, bold ──
-  // Use slash separators for cinematic feel: "감 / 사 / 합 / 니 / 다"
+  // For Korean text, _cinematicSpace returns text as-is (no separators).
   const cinematicText = _cinematicSpace(tyText);
+  // Hero textbox: full slide width minus 0.5" padding, taller to allow 2-line wrap
   sl.addText(cinematicText, {
-    x: 1.0,
-    y: SH * 0.40,
-    w: SW - 2.0,
-    h: 1.4,
+    x: 0.50,
+    y: SH * 0.34,
+    w: SW - 1.0,
+    h: 2.4,
     fontSize: 38,
     fontFace: FN_XB,
     color: "FFFFFF",
     align: "center",
     valign: "middle",
     bold: true,
+    lineSpacingMultiple: 1.25,
+    wrap: true,
   });
 
   // ── Sub-message with keyword color highlights ──
@@ -239,16 +224,15 @@ function _endingCinematic(sl, pptx, { tyText, promiseText, companyName, proposal
     });
 
     sl.addText(companyName, {
-      x: (SW - 4.0) / 2,
+      x: (SW - 6.0) / 2,
       y: SH - 1.3,
-      w: 4.0,
+      w: 6.0,
       h: 0.5,
       fontSize: 13,
       fontFace: FN_MD,
       color: "AAAAAA",
       align: "center",
       valign: "middle",
-      charSpacing: 200,
     });
   }
 }
@@ -373,20 +357,29 @@ function _endingBrandColor(sl, pptx, { tyText, promiseText, companyName, proposa
 // ---------------------------------------------------------------------------
 
 /**
+ * Detect Korean (Hangul) characters in text.
+ */
+function _hasKorean(text) {
+  return /[\u3130-\u318F\uAC00-\uD7AF]/.test(text || "");
+}
+
+/**
  * Add wide spacing between characters for "minimal" style.
- * "감사합니다" -> "감 사 합 니 다"
+ * Skipped for Korean text (looks broken with CJK rendering).
  */
 function _wideSpace(text) {
   if (!text) return "";
+  if (_hasKorean(text)) return text;
   return text.split("").join(" ");
 }
 
 /**
  * Add slash separators for "cinematic" style.
- * "감사합니다" -> "감 / 사 / 합 / 니 / 다"
+ * Skipped for Korean text — Korean characters look fragmented with separators.
  */
 function _cinematicSpace(text) {
   if (!text) return "";
+  if (_hasKorean(text)) return text;
   return text.split("").join(" / ");
 }
 

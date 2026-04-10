@@ -259,8 +259,9 @@ function _dividerImageSplit(sl, pptx, { numStr, chapterTitle, palette, bgImage }
 
   // ── Left image area ──
   if (bgImage) {
+    const imgArg = (bgImage.startsWith("image/") || bgImage.startsWith("data:")) ? { data: bgImage } : { path: bgImage };
     sl.addImage({
-      path: bgImage,
+      ...imgArg,
       x: 0,
       y: 0,
       w: imgW,

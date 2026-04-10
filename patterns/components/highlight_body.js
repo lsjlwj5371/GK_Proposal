@@ -239,19 +239,7 @@ function renderImageOverlayMessage(sl, pptx, opts) {
     });
   }
 
-  // -- Bottom venue/building image placeholder area
-  // [IMAGE: Bottom venue/building image placeholder]
-  sl.addShape(pptx.shapes.RECTANGLE, {
-    x: 0.80, y: SLIDE_H - 2.40, w: SLIDE_W - 1.60, h: 1.60,
-    fill: { color: 'FFFFFF', transparency: 90 },
-    line: { color: 'FFFFFF', width: 0.75, dashType: 'dash' },
-    rectRadius: 0.08,
-  });
-  sl.addText('// [IMAGE: venue / building / key visual]', {
-    x: 0.80, y: SLIDE_H - 2.40, w: SLIDE_W - 1.60, h: 1.60,
-    fontSize: 10, fontFace: FN, color: '808080',
-    align: 'center', valign: 'middle', margin: 0,
-  });
+  // -- (image placeholder rect/text removed — was visible artifact in real PPTs) --
 
   // -- Bottom insight bar
   if (insightText) {
