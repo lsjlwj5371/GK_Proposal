@@ -810,6 +810,67 @@ function _wideSpace(text) {
 
 **자동 검증**: generate_ppt.js 작성 후 정규식 `[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}]` 로 이모지 자동 검출 → 발견 시 즉시 교체.
 
+**[AP-15] 시스템 `bold: true` 사용 절대 금지 — ExtraBold 폰트로만 굵기 표현**
+
+pptxgenjs의 `bold: true` 옵션은 PowerPoint가 폰트 위에 페이크 볼드를 덧씌우는 방식이다. Pretendard 같은 가변 웨이트 한글 폰트에서는 (1) 자형이 뭉개지고 (2) 폰트 웨이트가 이중 적용되어 렌더링 불안정하다. **굵기는 반드시 ExtraBold 폰트 자체(`fontFace: 'Pretendard ExtraBold'`)로만 표현한다.**
+
+```
+❌ 나쁜 예: { fontSize: 18, fontFace: 'Pretendard', bold: true, color: ... }
+✅ 좋은 예: { fontSize: 18, fontFace: 'Pretendard ExtraBold', color: ... }
+```
+
+**자동 검증**: `grep -rn "bold:\s*true" generate_ppt.js patterns/components/*.js` → 0건이어야 한다.
+
+**[AP-16] Content Box 수직 점유율 ≥ 85% — 한 페이지 한 패턴(1:1) 금지**
+
+한 슬라이드에 컴포넌트 1개만 배치하면(예: cardGrid만, timeline만) 상·하 여백이 과다해지고 시각 요소 수가 부족해진다. 본문 페이지는 **Content Box(5.91" H) 수직 점유율 85% 이상**을 유지해야 하며, 이를 위해 `patterns/layouts/zone_helper.js`의 `split.TMB / split.TB / split.LR / split.grid2x2 / split.mainAside`로 영역을 나눠 **최소 2종 이상의 시각 구성요소**(KPI strip + 카드 + insight 등)를 배치한다.
+
+```javascript
+// ✅ 권장 조합 (본문 밀도 슬라이드)
+const [zTop, zMid, zBot] = split.TMB([0.18, 0.64, 0.18]);
+addKpiStripZ(sl, pptx, zTop, [...]);        // 상단 3~4 지표
+addBigCardsZ(sl, pptx, zMid, [...], {cols:4}); // 중단 큰 카드
+addInsightBoxZ(sl, pptx, zBot, '...');        // 하단 한 줄 통찰
+```
+
+**[AP-17] 빈 아이콘 자리(원/X/!/? 문자) 금지 — SVG 아이콘 또는 의미 있는 번호**
+
+AP-03(빈 장식 도형)의 강화 규칙. 아이콘 자리에 `'X'`, `'!'`, `'?'` 같은 문자나 내부가 빈 원을 놓는 것은 금지한다. 허용되는 대안:
+1. `patterns/components/icon_helper.js`의 SVG 아이콘 (권장)
+2. 큰 번호 텍스트(`01` / `02` / `03`) 44~56pt ACC
+3. 도형 + 번호 결합 (원/사각형 안에 숫자)
+
+**[AP-18] 한 슬라이드 단일 컴포넌트 금지 — 최소 2종 시각 구성 요소**
+
+본문 페이지는 다음 중 **최소 2종 이상**을 결합해야 한다:
+- KPI strip (가로 지표 3~4개)
+- Big cards (중단 대형 카드 2~4장)
+- Timeline / Step flow
+- Insight box (하단 한 줄 통찰)
+- Icon grid / Image placeholder
+
+예외: 간지(divider), 표지(cover), 마무리(ending), 강조(highlight) 컴포넌트는 전체 슬라이드 레이아웃을 의도적으로 점유하므로 단일 컴포넌트 허용.
+
+**[AP-19] 줄글(산문) 본문 3줄 초과 금지 — 반드시 bullet으로 분해**
+
+의료·B2B 제안서에서 4줄 이상의 산문은 가독성이 급락한다. 본문이 3줄을 넘어가면 **반드시** sub-bullet으로 쪼개거나 짧은 문장 2~3개로 분해한다.
+
+```
+❌ 나쁜 예 (4줄 산문):
+  "예약 시점부터 정산까지 모든 데이터는 의료법·개인정보보호법 기준으로
+   암호화 저장되며, 운전기사와 매니저는 환자 인적 정보에 접근할 수 없고,
+   모든 접근 기록은 ISO 27001 기준으로 감사 로그가 남으며, 분기별
+   외부 감사를 통해 검증한다."
+
+✅ 좋은 예 (핵심 1줄 + bullets):
+  body: '예약~정산 전 구간 암호화 저장·전송',
+  bullets: ['의료법·PIPA 준수', '기사·매니저 접근 차단', 'ISO 27001 감사 로그']
+```
+
+**[AP-20] divider image-split 타입(C) 사용 시 bgImage 경로 검증 필수**
+
+divider Type C(image-split)는 `bgImage` PNG에 의존한다. 이미지 누락·깨짐 시 슬라이드가 통째로 망가진다. Type C를 사용할 때는 (1) `fs.existsSync(bgImage)` 검증, (2) 파일 크기 > 0 확인, (3) 첫 4바이트 PNG 매직(89 50 4E 47) 검사 후 사용한다. 검증 실패 시 **Type D(브랜드그래픽)로 자동 폴백**해야 한다.
+
 ### ★ 여백(white-space) 정량 판단 기준 — 가장 중요
 
 여백 관리는 본 스킬에서 가장 빈번하게 실패하는 영역이다. "여백이 많아 보인다"는 주관 판단을 줄이기 위해 아래 정량 기준을 따른다.
@@ -1053,6 +1114,12 @@ PPT 코드를 생성한 직후, 사용자에게 결과물을 전달하기 전에
 - [AP-12] 한글 텍스트박스에 charSpacing 옵션이 들어가 있지 않은가? → grep `charSpacing` 후 한글 사용 라인 검출
 - [AP-13] 가로 카드 그리드의 카드 수가 4 이하인가? 카드 폭이 2.20″ 이상인가?
 - [AP-14] generate_ppt.js에 이모지가 포함되어 있지 않은가? → 정규식 `[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}]` 로 자동 검출
+- [AP-15] `bold:\s*true` 가 generate_ppt.js와 patterns/components/*.js 에 0건인가? → grep 자동 검증. 굵기는 `fontFace: 'Pretendard ExtraBold'` 로만 표현
+- [AP-16] 본문 페이지의 Content Box 수직 점유율이 85% 이상인가? → split.TMB/TB/LR 등 zone_helper 사용. 한 컴포넌트만 배치된 본문 페이지 금지
+- [AP-17] 아이콘 자리에 'X'/'!'/'?'/빈 원이 없는가? → 있으면 icon_helper.js SVG 또는 큰 번호 텍스트로 교체
+- [AP-18] 본문 페이지에 KPI strip + big cards + insight 중 최소 2종이 결합되어 있는가? → 단일 컴포넌트는 간지/표지/마무리/강조에서만 허용
+- [AP-19] 카드 본문이 3줄 이하인가? 4줄 초과 시 bullets로 분해되어 있는가?
+- [AP-20] divider Type C 사용 시 bgImage 경로 검증 로직(existsSync + PNG 매직 바이트)이 있는가? 없으면 Type D로 교체
 
 **10. 여백 정량 기준 검사**
 - 슬라이드 Fill Rate가 65% 이상인가?

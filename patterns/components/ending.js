@@ -75,7 +75,6 @@ function _endingMinimal(sl, pptx, { tyText, promiseText, companyName, proposalTi
     align: "left",
     valign: "middle",
     charSpacing: 400,
-    bold: true,
   });
 
   // ── Sub-promise text below ──
@@ -187,7 +186,6 @@ function _endingCinematic(sl, pptx, { tyText, promiseText, companyName, proposal
     color: "FFFFFF",
     align: "center",
     valign: "middle",
-    bold: true,
     lineSpacingMultiple: 1.25,
     wrap: true,
   });
@@ -287,7 +285,6 @@ function _endingBrandColor(sl, pptx, { tyText, promiseText, companyName, proposa
     align: "center",
     valign: "middle",
     charSpacing: 400,
-    bold: true,
   });
 
   // ── Resolution sub-message ──
@@ -414,7 +411,6 @@ function _buildHighlightedText(text, highlightColor) {
             fontSize: 15,
             fontFace: FN_XB,
             color: highlightColor,
-            bold: true,
           },
         };
       }

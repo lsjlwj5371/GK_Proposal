@@ -66,14 +66,14 @@ function addHeader(sl, pptx, { pageNum, sectionLabel, headline, subtitle, palett
 
   // 1. Page number + section label
   sl.addText([
-    { text: pageNum || '', options: { fontSize: 10, color: labelColor, bold: true, fontFace: FN } },
+    { text: pageNum || '', options: { fontSize: 10, color: labelColor, fontFace: FN } },
     { text: '  ' + (sectionLabel || ''), options: { fontSize: 9, color: tocColor, fontFace: FN } },
   ], { x: HDR_X, y: HDR_LABEL_Y, w: 5.0, h: HDR_LABEL_H, margin: 0 });
 
   // 2. Headline (Bold 16pt)
   sl.addText(headline || '', {
     x: HDR_X, y: HDR_MSG_Y, w: HDR_MSG_W, h: HDR_MSG_H,
-    fontSize: 16, fontFace: FN_XB, bold: true, color: headColor, margin: 0,
+    fontSize: 16, fontFace: FN_XB, color: headColor, margin: 0,
   });
 
   // 3. Subtitle (10pt)
@@ -109,8 +109,7 @@ function renderDarkKeywords(sl, pptx, opts) {
   if (message) {
     sl.addText(message, {
       x: CB_X, y: CB_Y + 0.20, w: CB_W, h: 1.00,
-      fontSize: 22, fontFace: FN_XB, color: 'FFFFFF',
-      bold: true, align: 'center', valign: 'middle', margin: 0,
+      fontSize: 22, fontFace: FN_XB, color: 'FFFFFF', align: 'center', valign: 'middle', margin: 0,
       lineSpacingMultiple: 1.3,
     });
   }
@@ -147,8 +146,7 @@ function renderDarkKeywords(sl, pptx, opts) {
       // English keyword label (below or inside circle)
       sl.addText(item.label || '', {
         x: cx - 0.15, y: circleY + circleD + 0.12, w: circleD + 0.30, h: 0.30,
-        fontSize: 11, fontFace: FN_XB, color: 'FFFFFF',
-        bold: true, align: 'center', valign: 'top', margin: 0,
+        fontSize: 11, fontFace: FN_XB, color: 'FFFFFF', align: 'center', valign: 'top', margin: 0,
       });
 
       // Korean sublabel (below keyword)
@@ -222,8 +220,7 @@ function renderImageOverlayMessage(sl, pptx, opts) {
   if (message) {
     sl.addText(message, {
       x: CB_X, y: CB_Y + 0.60, w: CB_W, h: 1.40,
-      fontSize: 26, fontFace: FN_XB, color: 'FFFFFF',
-      bold: true, align: 'center', valign: 'middle', margin: 0,
+      fontSize: 26, fontFace: FN_XB, color: 'FFFFFF', align: 'center', valign: 'middle', margin: 0,
       lineSpacingMultiple: 1.4,
     });
   }
@@ -323,8 +320,7 @@ function renderSplitImpact(sl, pptx, opts) {
       // Service/value label below circle
       sl.addText(item.label || '', {
         x: cx - 0.20, y: circleTopY + circleD + 0.10, w: circleD + 0.40, h: 0.30,
-        fontSize: 11, fontFace: FN_XB, color: 'FFFFFF',
-        bold: true, align: 'center', valign: 'top', margin: 0,
+        fontSize: 11, fontFace: FN_XB, color: 'FFFFFF', align: 'center', valign: 'top', margin: 0,
       });
 
       // Korean sublabel
@@ -349,8 +345,7 @@ function renderSplitImpact(sl, pptx, opts) {
     });
     sl.addText(insightText, {
       x: CB_X, y: barY + 0.02, w: CB_W, h: barH - 0.04,
-      fontSize: 11, fontFace: FN_XB, color: 'FFFFFF',
-      bold: true, align: 'center', valign: 'middle', margin: 0,
+      fontSize: 11, fontFace: FN_XB, color: 'FFFFFF', align: 'center', valign: 'middle', margin: 0,
     });
   }
 }

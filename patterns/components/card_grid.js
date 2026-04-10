@@ -17,13 +17,16 @@
  *   cardGrid(sl, pptx, { cards, palette, style: 'dark' });
  */
 
-// Content Box 상수
+// Content Box 상수 (기본 zone)
 const CB_X = 0.53;
 const CB_Y = 1.77;
 const CB_W = 10.63;
 const CB_H = 5.91;
 const CB_PAD = 0.15;
-const CB_GAP = 0.10; // 카드 간격 (좁게)
+const CB_GAP_DEFAULT = 0.10; // 카드 간격 (좁게)
+
+// zone 기반 레이아웃 지원 (Option B)
+const { DENSITY, inferDensity, assertZoneSize } = require('../layouts/zone_helper');
 
 const FN_XB = 'Pretendard ExtraBold';
 const FN_MD = 'Pretendard Medium';
@@ -314,6 +317,11 @@ function renderImageOverlayCard(sl, pptx, { x, y, w, h, card, palette }) {
  * @param {string} [options.style='default'] - 'default'|'dark'|'kpi'|'image-overlay'
  * @param {number} [options.iconSize=28] - 아이콘 크기 (pt)
  * @param {Object} [options.gridOverride] - { cols, rows } 수동 지정
+ * @param {Object} [options.zone] - (Option B) { x, y, w, h } 렌더링 영역.
+ *   생략 시 Content Box 전체(CB_FULL)를 사용 → 하위 호환.
+ * @param {string} [options.density] - (Option B) 'full'|'half'|'third'|'quarter'|'strip'.
+ *   생략 시 zone 크기로 자동 추론. zone이 density의 최소 높이를 못 채우면 throw.
+ * @param {number} [options.gap] - (Option B) 카드 간 gap override. 생략 시 density.gap 사용.
  */
 function cardGrid(sl, pptx, options = {}) {
   const {
@@ -322,15 +330,27 @@ function cardGrid(sl, pptx, options = {}) {
     style = 'default',
     iconSize = 28,
     gridOverride,
+    zone,
+    density: densityKey,
+    gap: gapOverride,
   } = options;
 
   if (cards.length === 0) return;
 
+  // zone 기본값 = Content Box 전체 (하위 호환)
+  const z = zone || { x: CB_X, y: CB_Y, w: CB_W, h: CB_H };
+
+  // density 추론/검증
+  const dKey = densityKey || inferDensity(z);
+  assertZoneSize(z, dKey);
+  const d = DENSITY[dKey];
+  const gap = (typeof gapOverride === 'number') ? gapOverride : d.gap;
+
   const { cols, rows } = gridOverride || resolveGrid(cards.length);
 
-  // 카드 크기 계산
-  const cardW = (CB_W - CB_GAP * (cols - 1)) / cols;
-  const cardH = (CB_H - CB_GAP * (rows - 1)) / rows;
+  // 카드 크기 계산 (zone 기준)
+  const cardW = (z.w - gap * (cols - 1)) / cols;
+  const cardH = (z.h - gap * (rows - 1)) / rows;
 
   // 렌더러 선택
   const renderers = {
@@ -341,14 +361,14 @@ function cardGrid(sl, pptx, options = {}) {
   };
   const render = renderers[style] || renderDefaultCard;
 
-  // 각 카드 렌더링
+  // 각 카드 렌더링 (zone 기준 좌표)
   cards.forEach((card, i) => {
     const col = i % cols;
     const row = Math.floor(i / cols);
-    const x = CB_X + col * (cardW + CB_GAP);
-    const y = CB_Y + row * (cardH + CB_GAP);
+    const x = z.x + col * (cardW + gap);
+    const y = z.y + row * (cardH + gap);
 
-    render(sl, pptx, { x, y, w: cardW, h: cardH, card, palette, iconSize });
+    render(sl, pptx, { x, y, w: cardW, h: cardH, card, palette, iconSize, density: d });
   });
 }
 
@@ -359,4 +379,4 @@ module.exports.CB_X = CB_X;
 module.exports.CB_Y = CB_Y;
 module.exports.CB_W = CB_W;
 module.exports.CB_H = CB_H;
-module.exports.CB_GAP = CB_GAP;
+module.exports.CB_GAP = CB_GAP_DEFAULT;

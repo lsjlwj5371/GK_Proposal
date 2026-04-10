@@ -72,7 +72,6 @@ function _dividerCenter(sl, pptx, { numStr, chapterTitle, palette }) {
     color: SEC,
     align: "center",
     valign: "middle",
-    bold: true,
   });
 
   // ── Chapter title - centered below number ──
@@ -171,7 +170,6 @@ function _dividerSidebar(sl, pptx, { numStr, chapterTitle, subItems, palette }) 
     color: "FFFFFF",
     align: "center",
     valign: "middle",
-    bold: true,
   });
 
   // ── Chapter title on right side ──
@@ -312,7 +310,6 @@ function _dividerImageSplit(sl, pptx, { numStr, chapterTitle, palette, bgImage }
     color: "FFFFFF",
     align: "center",
     valign: "middle",
-    bold: true,
     transparency: 15,
   });
 
@@ -362,7 +359,6 @@ function _dividerBrandGraphic(sl, pptx, { numStr, chapterTitle, palette }) {
     color: "FFFFFF",
     align: "left",
     valign: "middle",
-    bold: true,
   });
 
   // ── Left: accent bar under number ──
