@@ -413,6 +413,37 @@ N. 마무리 — "다짐 카피"
 
 `references/01_생성프롬프트_가이드.md`의 섹션 12 (PPT 코드 생성 가이드)를 반드시 읽고 따른다.
 
+### ★ 작업 디렉토리 정책 (필수)
+
+PPT 생성 작업 폴더는 **반드시 아래 경로 하위에** 시나리오별 서브폴더로 생성한다. Temp 폴더(`%TEMP%`, `AppData\Local\Temp`)는 사용 금지.
+
+```
+베이스 경로:
+C:\Users\akstn\OneDrive\바탕화면 - DESKTOP-G1P5I6M (334012)\이우재\01. AX Project\02. 제안서 자동화\클로드 작업파일\
+
+시나리오별 폴더:
+└── {YYYYMMDD}_{시나리오슬러그}_v{N}\
+    ├── generate_ppt.js
+    ├── pptx_vars.js
+    ├── slides_png/           ← Phase 4 시각 QA용 PNG
+    ├── {제안서명}.pptx       ← 최종 산출물
+    └── (기타 작업 파일들)
+```
+
+**규칙:**
+1. **베이스 경로 변수**로 코드 상단에 정의:
+   ```javascript
+   const WORK_BASE = 'C:\\Users\\akstn\\OneDrive\\바탕화면 - DESKTOP-G1P5I6M (334012)\\이우재\\01. AX Project\\02. 제안서 자동화\\클로드 작업파일';
+   ```
+2. **폴더명 형식**: `YYYYMMDD_시나리오슬러그_v버전` (예: `20260410_samsung_pyeongtaek_v1`)
+   - 시나리오슬러그는 영문 소문자 + 언더스코어
+   - 같은 날 같은 시나리오를 재생성하면 v2, v3로 증가
+3. **폴더 미존재 시 생성**: `fs.mkdirSync(workDir, { recursive: true })`
+4. **경로 처리 주의**:
+   - Bash 환경에서 OneDrive 한글 경로는 종종 `바탕화~1-DESKTOP-G1P5I6M-334012` 같은 단축 경로로 표시되지만, **Node.js / PowerShell에서는 원본 한글 경로를 사용**한다
+   - 경로에 공백이 있으므로 PowerShell 호출 시 반드시 따옴표 처리
+5. **사용자에게 안내**: 작업 시작 시 "작업 폴더: `클로드 작업파일\YYYYMMDD_xxx_v1`" 한 줄로 통지
+
 ### 핵심 규격
 
 **폰트 변수:**
