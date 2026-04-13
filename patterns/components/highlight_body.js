@@ -1,47 +1,40 @@
 /**
- * highlight_body.js
+ * highlight_body.js - Highlight/emphasis body pages (AP-01~AP-27 compliant)
  * -------------------------------------------------------------------------
- * Parameterized pptxgenjs component for highlight/emphasis body pages.
+ * Complete rewrite: addHeader OOXML bug removed.
+ * Header is now rendered manually (identical to standard body pages).
  *
  * Three variants:
- *   A  "dark-keywords"          -- Dark background + circular keyword badges
- *   B  "image-overlay-message"  -- Full-bleed image + gradient overlay + large message
- *   C  "split-impact"           -- Upper light / lower dark split with icon badges
+ *   A  "dark-keywords"          -- Dark bg + large hero message + KPI badges
+ *   B  "image-overlay-message"  -- Full-bleed dark + gradient + large message
+ *   C  "split-impact"           -- Upper hero message + lower dark KPI badges
+ *
+ * AP compliance:
+ *   - AP-12: No charSpacing on Korean text
+ *   - AP-14: No emoji characters
+ *   - AP-15: No bold: true (use FN_XB fontFace)
+ *   - AP-21: Left vertical bar instead of top accent bar
+ *   - AP-24: Shadow factory sdw()
+ *   - AP-25: margin: 0 only (no array)
+ *   - AP-27: wrap: false + margin: 0 on single-line text
+ *   - All shapes use line: { type: 'none' }
  *
  * Slide size: 11.69 x 8.27 inches (A4 landscape)
- *
- * Header coordinates are identical to standard body pages (section 6 spec):
- *   pageNum+label   x=0.47  y=0.21  w=5.00  h=0.25
- *   headline        x=0.47  y=0.68  w=10.75 h=0.47
- *   subtitle        x=0.47  y=1.18  w=10.75 h=0.29
- *   divider line    x=0.47  y=1.55  w=10.75 h=0.015
- *   content area    x=0.47  y=2.00  w=10.75 h=5.50
  * -------------------------------------------------------------------------
  */
 
 'use strict';
 
-// ━━━ Layout Constants ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const SLIDE_W = 11.69;
-const SLIDE_H = 8.27;
+// Layout Constants
+const SW = 11.69;
+const SH = 8.27;
 
-// Header area (absolute -- matches standard body pages)
-const HDR_X = 0.47;
-const HDR_LABEL_Y = 0.21;
-const HDR_LABEL_H = 0.25;
-const HDR_MSG_Y = 0.68;
-const HDR_MSG_W = 10.75;
-const HDR_MSG_H = 0.47;
-const HDR_SUB_Y = 1.18;
-const HDR_SUB_H = 0.29;
-const HDR_LINE_Y = 1.55;
-const HDR_LINE_H = 0.015;
-
-// Content area
-const CB_X = 0.47;
-const CB_Y = 2.00;
-const CB_W = 10.75;
-const CB_H = 5.50;
+// Content Box
+const CB_X = 0.53;
+const CB_Y = 1.77;
+const CB_W = 10.63;
+const CB_H = 5.91;
+const CB_PAD = 0.15;
 
 // Fonts
 const FN    = 'Pretendard';
@@ -49,341 +42,347 @@ const FN_XB = 'Pretendard ExtraBold';
 const FN_MD = 'Pretendard Medium';
 const FN_TN = 'Pretendard Thin';
 
-// ━━━ Helper: safe color (strip leading '#') ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Shadow factory (AP-24)
+const sdw = () => ({ type: 'outer', blur: 6, offset: 3, angle: 270, color: '000000', opacity: 0.15 });
+
+// Safe color (strip leading '#')
 function c(hex) {
   if (!hex) return 'FFFFFF';
   return String(hex).replace(/^#/, '');
 }
 
-// ━━━ Shared: Header renderer (dark-aware) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function addHeader(sl, pptx, { pageNum, sectionLabel, headline, subtitle, palette, darkBg }) {
-  const txtLight = darkBg;  // true => white text
-  const labelColor   = txtLight ? 'FFFFFF' : c(palette.DOM);
-  const tocColor     = txtLight ? 'C0C0C0' : '6B7280';
-  const headColor    = txtLight ? 'FFFFFF' : '1A1A2E';
-  const subColor     = txtLight ? 'B0B0B0' : '6B7280';
-  const lineColor    = txtLight ? c(palette.ACC || 'FFFFFF') : c(palette.SEC || 'D1D5DB');
+// ---- Manual header renderer (replaces buggy addHeader) ----
+function renderHeader(sl, pptx, { chapter, msg, sub, palette, darkBg }) {
+  const labelColor = darkBg ? 'AAAAAA' : c(palette.TG || '888888');
+  const headColor  = darkBg ? 'FFFFFF' : c(palette.BODY_CLR || '333355');
+  const subColor   = darkBg ? 'B0B0B0' : c(palette.TG || '888888');
+  const lineColor  = c(palette.DOM || 'CC0033');
 
-  // 1. Page number + section label
-  sl.addText([
-    { text: pageNum || '', options: { fontSize: 10, color: labelColor, fontFace: FN } },
-    { text: '  ' + (sectionLabel || ''), options: { fontSize: 9, color: tocColor, fontFace: FN } },
-  ], { x: HDR_X, y: HDR_LABEL_Y, w: 5.0, h: HDR_LABEL_H, margin: 0 });
-
-  // 2. Headline (Bold 16pt)
-  sl.addText(headline || '', {
-    x: HDR_X, y: HDR_MSG_Y, w: HDR_MSG_W, h: HDR_MSG_H,
-    fontSize: 16, fontFace: FN_XB, color: headColor, margin: 0,
+  // Chapter label
+  sl.addText(chapter || '', {
+    x: 0.47, y: 0.21, w: 5.0, h: 0.25,
+    fontSize: 9, fontFace: FN_MD, color: labelColor,
+    wrap: false, margin: 0,
   });
 
-  // 3. Subtitle (10pt)
-  sl.addText(subtitle || '', {
-    x: HDR_X, y: HDR_SUB_Y, w: HDR_MSG_W, h: HDR_SUB_H,
-    fontSize: 10, fontFace: FN, color: subColor, margin: 0,
+  // Headline
+  sl.addText(msg || '', {
+    x: 0.47, y: 0.68, w: 10.75, h: 0.47,
+    fontSize: 16, fontFace: FN_XB, color: headColor,
+    wrap: false, margin: 0,
   });
 
-  // 4. Divider line
+  // Subtitle
+  if (sub) {
+    sl.addText(sub, {
+      x: 0.47, y: 1.18, w: 10.75, h: 0.29,
+      fontSize: 10, fontFace: FN, color: subColor,
+      wrap: false, margin: 0,
+    });
+  }
+
+  // Divider line
+  const lineFill = darkBg
+    ? { color: lineColor }
+    : { color: lineColor };
   sl.addShape(pptx.shapes.RECTANGLE, {
-    x: HDR_X, y: HDR_LINE_Y, w: HDR_MSG_W, h: HDR_LINE_H,
-    fill: { color: lineColor },
-    line: { width: 0 },
+    x: 0.47, y: 1.55, w: 10.75, h: 0.015,
+    fill: lineFill,
+    line: { type: 'none' },
   });
 }
 
-// ━━━ Type A: dark-keywords ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ---- Type A: dark-keywords ----
 function renderDarkKeywords(sl, pptx, opts) {
-  const { message, keywords = [], insightText, palette } = opts;
+  const { message, badges = [], insightText, palette } = opts;
   const bgColor = c(palette.DK || palette.DOM || '0D0D2B');
 
-  // -- Full dark background
-  sl.addShape(pptx.shapes.RECTANGLE, {
-    x: 0, y: 0, w: SLIDE_W, h: SLIDE_H,
-    fill: { color: bgColor },
-    line: { width: 0 },
-  });
+  // Full dark background
+  sl.background = { fill: bgColor };
 
-  // -- Header (white text on dark)
-  addHeader(sl, pptx, { ...opts, darkBg: true });
+  // Header (white text on dark)
+  renderHeader(sl, pptx, { ...opts, darkBg: true });
 
-  // -- Central declarative message
+  // Hero message (center)
   if (message) {
     sl.addText(message, {
-      x: CB_X, y: CB_Y + 0.20, w: CB_W, h: 1.00,
-      fontSize: 22, fontFace: FN_XB, color: 'FFFFFF', align: 'center', valign: 'middle', margin: 0,
-      lineSpacingMultiple: 1.3,
+      x: CB_X + CB_PAD, y: CB_Y + 0.30,
+      w: CB_W - CB_PAD * 2, h: 2.2,
+      fontSize: 30, fontFace: FN_XB, color: 'FFFFFF',
+      align: 'center', valign: 'middle',
+      lineSpacingMultiple: 1.5, wrap: true,
     });
   }
 
-  // -- Keyword badges (horizontal layout)
-  const kw = keywords.slice(0, 5);
-  const kwCount = kw.length;
-  if (kwCount > 0) {
-    const circleD = 1.30;           // diameter
-    const gap = 0.60;               // gap between circles
-    const totalW = kwCount * circleD + (kwCount - 1) * gap;
-    const startX = (SLIDE_W - totalW) / 2;
-    const circleY = CB_Y + 1.60;   // vertical position of circle center area
+  // Accent underline
+  sl.addShape(pptx.shapes.RECTANGLE, {
+    x: (SW - 3.0) / 2, y: CB_Y + 2.60,
+    w: 3.0, h: 0.03,
+    fill: { color: c(palette.ACC || 'E87722') },
+    line: { type: 'none' },
+  });
 
-    kw.forEach((item, i) => {
-      const cx = startX + i * (circleD + gap);
-
-      // Circle: outline-only (transparent fill, white border)
-      sl.addShape(pptx.shapes.OVAL, {
-        x: cx, y: circleY, w: circleD, h: circleD,
-        fill: { color: 'FFFFFF', transparency: 100 },
-        line: { color: 'FFFFFF', width: 1.5, dashType: 'solid' },
-      });
-
-      // Icon text inside circle (optional -- use emoji or symbol placeholder)
-      if (item.icon) {
-        sl.addText(item.icon, {
-          x: cx, y: circleY + 0.15, w: circleD, h: circleD * 0.50,
-          fontSize: 26, fontFace: FN, color: 'FFFFFF',
-          align: 'center', valign: 'middle', margin: 0,
-        });
-      }
-
-      // English keyword label (below or inside circle)
-      sl.addText(item.label || '', {
-        x: cx - 0.15, y: circleY + circleD + 0.12, w: circleD + 0.30, h: 0.30,
-        fontSize: 11, fontFace: FN_XB, color: 'FFFFFF', align: 'center', valign: 'top', margin: 0,
-      });
-
-      // Korean sublabel (below keyword)
-      if (item.sublabel) {
-        sl.addText(item.sublabel, {
-          x: cx - 0.15, y: circleY + circleD + 0.40, w: circleD + 0.30, h: 0.28,
-          fontSize: 9, fontFace: FN_MD, color: 'B0B0B0',
-          align: 'center', valign: 'top', margin: 0,
-        });
-      }
-
-      // Optional description (smaller, below sublabel)
-      if (item.description) {
-        sl.addText(item.description, {
-          x: cx - 0.20, y: circleY + circleD + 0.68, w: circleD + 0.40, h: 0.40,
-          fontSize: 8, fontFace: FN_TN, color: '9B9B9B',
-          align: 'center', valign: 'top', margin: 0,
-          lineSpacingMultiple: 1.2,
-        });
-      }
+  // Sub message (below accent line)
+  if (opts.subMessage) {
+    sl.addText(opts.subMessage, {
+      x: CB_X + CB_PAD, y: CB_Y + 2.80,
+      w: CB_W - CB_PAD * 2, h: 0.80,
+      fontSize: 16, fontFace: FN_MD, color: 'CCCCCC',
+      align: 'center', valign: 'middle',
+      lineSpacingMultiple: 1.4, wrap: true,
     });
   }
 
-  // -- Bottom closing statement / insight bar
+  // Bottom badge row (KPI-style, with left vertical bar)
+  const badgeCount = badges.length;
+  if (badgeCount > 0) {
+    const badgeY = CB_Y + CB_H - 1.40;
+    const badgeH = 1.20;
+    const badgeGap = 0.15;
+    const badgeW = (CB_W - CB_PAD * 2 - badgeGap * (badgeCount - 1)) / badgeCount;
+
+    badges.forEach((b, i) => {
+      const x = CB_X + CB_PAD + i * (badgeW + badgeGap);
+
+      // Badge bg
+      sl.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
+        x, y: badgeY, w: badgeW, h: badgeH,
+        rectRadius: 0.08,
+        fill: { color: c(palette.SEC || '1E2A3A') },
+        line: { type: 'none' },
+        shadow: sdw(),
+      });
+
+      // Left vertical bar (AP-21)
+      sl.addShape(pptx.shapes.RECTANGLE, {
+        x, y: badgeY + 0.10, w: 0.04, h: badgeH - 0.20,
+        fill: { color: c(palette.DOM || 'CC0033') },
+        line: { type: 'none' },
+      });
+
+      // Value text
+      sl.addText(b.value || b.num || '', {
+        x: x + 0.15, y: badgeY + 0.12, w: badgeW - 0.30, h: 0.50,
+        fontSize: 16, fontFace: FN_XB, color: c(palette.ACC || 'E87722'),
+        align: 'left', valign: 'middle',
+        wrap: false, margin: 0,
+      });
+
+      // Label
+      sl.addText(b.label || '', {
+        x: x + 0.15, y: badgeY + 0.65, w: badgeW - 0.30, h: 0.35,
+        fontSize: 12, fontFace: FN_MD, color: 'CCCCCC',
+        align: 'left', valign: 'middle',
+        wrap: false, margin: 0,
+      });
+    });
+  }
+
+  // Bottom insight bar
   if (insightText) {
-    sl.addShape(pptx.shapes.RECTANGLE, {
-      x: 0, y: SLIDE_H - 0.80, w: SLIDE_W, h: 0.60,
-      fill: { color: c(palette.ACC || 'FF6B35'), transparency: 15 },
-      line: { width: 0 },
-    });
     sl.addText(insightText, {
-      x: CB_X, y: SLIDE_H - 0.78, w: CB_W, h: 0.56,
-      fontSize: 11, fontFace: FN_MD, color: 'FFFFFF',
-      align: 'center', valign: 'middle', margin: 0,
+      x: CB_X + CB_PAD, y: CB_Y + CB_H - 0.65,
+      w: CB_W - CB_PAD * 2, h: 0.60,
+      fontSize: 14, fontFace: FN_XB, color: 'FFFFFF',
+      fill: { color: c(palette.DOM || 'CC0033') },
+      rectRadius: 0.06,
+      align: 'center', valign: 'middle',
+      margin: 0,
+      line: { type: 'none' },
+      shadow: sdw(),
     });
   }
 }
 
-// ━━━ Type B: image-overlay-message ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ---- Type B: image-overlay-message ----
 function renderImageOverlayMessage(sl, pptx, opts) {
-  const { message, keywords = [], insightText, palette } = opts;
+  const { message, subMessage, insightText, palette, bgImage } = opts;
 
-  // -- Full-bleed image placeholder (background)
-  // [IMAGE: Full-bleed background image covering entire slide]
-  sl.addShape(pptx.shapes.RECTANGLE, {
-    x: 0, y: 0, w: SLIDE_W, h: SLIDE_H,
-    fill: { color: '2A2A3D' },  // placeholder dark fill
-    line: { width: 0 },
-  });
-  // [IMAGE: Replace the rectangle above with pptx.addImage() for actual background image]
-  // Example: sl.addImage({ path: 'bg.jpg', x: 0, y: 0, w: SLIDE_W, h: SLIDE_H });
+  // Full dark background (or image + overlay)
+  sl.background = { fill: c(palette.DK || '0D0D1A') };
 
-  // -- Semi-transparent gradient overlay (top transparent -> bottom opaque)
+  if (bgImage) {
+    const imgArg = (bgImage.startsWith('image/') || bgImage.startsWith('data:'))
+      ? { data: bgImage } : { path: bgImage };
+    sl.addImage({ ...imgArg, x: 0, y: 0, w: SW, h: SH, sizing: { type: 'cover', w: SW, h: SH } });
+  }
+
+  // Semi-transparent gradient overlay
   sl.addShape(pptx.shapes.RECTANGLE, {
-    x: 0, y: 0, w: SLIDE_W, h: SLIDE_H,
+    x: 0, y: 0, w: SW, h: SH,
     fill: {
       type: 'gradient',
       stops: [
-        { position: 0,   color: '000000', transparency: 80 },
-        { position: 50,  color: '000000', transparency: 50 },
+        { position: 0, color: '000000', transparency: 80 },
+        { position: 50, color: '000000', transparency: 50 },
         { position: 100, color: '000000', transparency: 10 },
       ],
     },
-    line: { width: 0 },
+    line: { type: 'none' },
   });
 
-  // -- Header (white text on dark overlay)
-  addHeader(sl, pptx, { ...opts, darkBg: true });
+  // Header (white text on dark)
+  renderHeader(sl, pptx, { ...opts, darkBg: true });
 
-  // -- Central large message
+  // Central large message
   if (message) {
     sl.addText(message, {
-      x: CB_X, y: CB_Y + 0.60, w: CB_W, h: 1.40,
-      fontSize: 26, fontFace: FN_XB, color: 'FFFFFF', align: 'center', valign: 'middle', margin: 0,
-      lineSpacingMultiple: 1.4,
+      x: CB_X + CB_PAD, y: CB_Y + 0.60,
+      w: CB_W - CB_PAD * 2, h: 1.40,
+      fontSize: 26, fontFace: FN_XB, color: 'FFFFFF',
+      align: 'center', valign: 'middle',
+      lineSpacingMultiple: 1.4, wrap: true, margin: 0,
     });
   }
 
-  // -- Emotional/poetic sub-copy (from keywords[0].description or first keyword label)
-  const subCopy = (keywords[0] && keywords[0].description) || '';
-  if (subCopy) {
-    sl.addText(subCopy, {
-      x: CB_X + 1.0, y: CB_Y + 2.20, w: CB_W - 2.0, h: 0.60,
+  // Sub-copy
+  if (subMessage) {
+    sl.addText(subMessage, {
+      x: CB_X + 1.0, y: CB_Y + 2.20,
+      w: CB_W - 2.0, h: 0.60,
       fontSize: 12, fontFace: FN_TN, color: 'D0D0D0',
-      align: 'center', valign: 'middle', margin: 0,
-      italic: true,
+      align: 'center', valign: 'middle',
+      wrap: true, margin: 0,
     });
   }
 
-  // -- (image placeholder rect/text removed — was visible artifact in real PPTs) --
-
-  // -- Bottom insight bar
+  // Bottom insight bar
   if (insightText) {
-    sl.addShape(pptx.shapes.RECTANGLE, {
-      x: 0, y: SLIDE_H - 0.65, w: SLIDE_W, h: 0.50,
-      fill: { color: '000000', transparency: 30 },
-      line: { width: 0 },
-    });
     sl.addText(insightText, {
-      x: CB_X, y: SLIDE_H - 0.63, w: CB_W, h: 0.46,
-      fontSize: 11, fontFace: FN_MD, color: 'FFFFFF',
-      align: 'center', valign: 'middle', margin: 0,
+      x: CB_X + CB_PAD, y: CB_Y + CB_H - 0.65,
+      w: CB_W - CB_PAD * 2, h: 0.60,
+      fontSize: 14, fontFace: FN_XB, color: 'FFFFFF',
+      fill: { color: c(palette.DOM || 'CC0033') },
+      rectRadius: 0.06,
+      align: 'center', valign: 'middle',
+      margin: 0,
+      line: { type: 'none' },
+      shadow: sdw(),
     });
   }
 }
 
-// ━━━ Type C: split-impact ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ---- Type C: split-impact (DOM bg + hero + pillars) ----
 function renderSplitImpact(sl, pptx, opts) {
-  const { message, keywords = [], insightText, palette } = opts;
-  const splitY = SLIDE_H * 0.42;   // ~40% upper, ~60% lower
+  const { message, subMessage, pillars = [], insightText, palette } = opts;
 
-  // -- Upper portion: white/light background (default slide bg is white)
-  // No shape needed -- slide background is white by default.
+  // Full DOM color background
+  sl.background = { fill: c(palette.DOM || 'CC0033') };
 
-  // -- Header (dark text on light background)
-  addHeader(sl, pptx, { ...opts, darkBg: false });
+  // Header (white text on colored bg)
+  renderHeader(sl, pptx, { ...opts, darkBg: true });
 
-  // -- Upper area: explanatory text with bold keywords
+  // Hero message (center)
   if (message) {
     sl.addText(message, {
-      x: CB_X, y: CB_Y, w: CB_W, h: splitY - CB_Y - 0.15,
-      fontSize: 14, fontFace: FN_MD, color: '333333',
-      align: 'left', valign: 'middle', margin: [0, 10, 0, 0],
-      lineSpacingMultiple: 1.5,
+      x: CB_X + CB_PAD, y: CB_Y + 0.50,
+      w: CB_W - CB_PAD * 2, h: 2.6,
+      fontSize: 36, fontFace: FN_XB, color: 'FFFFFF',
+      align: 'center', valign: 'middle',
+      lineSpacingMultiple: 1.5, wrap: true,
     });
   }
 
-  // -- Accent bar separating the two sections
+  // Accent line
   sl.addShape(pptx.shapes.RECTANGLE, {
-    x: 0, y: splitY - 0.03, w: SLIDE_W, h: 0.06,
-    fill: { color: c(palette.ACC || 'FF6B35') },
-    line: { width: 0 },
+    x: (SW - 3.0) / 2, y: CB_Y + 3.30,
+    w: 3.0, h: 0.03,
+    fill: { color: 'FFFFFF', transparency: 30 },
+    line: { type: 'none' },
   });
 
-  // -- Lower portion: DOM/dark color block
-  sl.addShape(pptx.shapes.RECTANGLE, {
-    x: 0, y: splitY, w: SLIDE_W, h: SLIDE_H - splitY,
-    fill: { color: c(palette.DK || palette.DOM || '1A1A2E') },
-    line: { width: 0 },
-  });
-
-  // -- Circular icon badges in lower section
-  const kw = keywords.slice(0, 4);
-  const kwCount = kw.length;
-  if (kwCount > 0) {
-    const circleD = 1.20;
-    const gap = 0.80;
-    const totalW = kwCount * circleD + (kwCount - 1) * gap;
-    const startX = (SLIDE_W - totalW) / 2;
-    const circleTopY = splitY + 0.50;
-
-    kw.forEach((item, i) => {
-      const cx = startX + i * (circleD + gap);
-
-      // Colored circle background (DOM-based, slightly lighter)
-      sl.addShape(pptx.shapes.OVAL, {
-        x: cx, y: circleTopY, w: circleD, h: circleD,
-        fill: { color: c(palette.DOM || '3B3B6D'), transparency: 30 },
-        line: { color: 'FFFFFF', width: 1.0 },
-      });
-
-      // Icon inside circle (white)
-      if (item.icon) {
-        sl.addText(item.icon, {
-          x: cx, y: circleTopY + 0.10, w: circleD, h: circleD * 0.55,
-          fontSize: 28, fontFace: FN, color: 'FFFFFF',
-          align: 'center', valign: 'middle', margin: 0,
-        });
-      }
-
-      // Service/value label below circle
-      sl.addText(item.label || '', {
-        x: cx - 0.20, y: circleTopY + circleD + 0.10, w: circleD + 0.40, h: 0.30,
-        fontSize: 11, fontFace: FN_XB, color: 'FFFFFF', align: 'center', valign: 'top', margin: 0,
-      });
-
-      // Korean sublabel
-      if (item.sublabel) {
-        sl.addText(item.sublabel, {
-          x: cx - 0.20, y: circleTopY + circleD + 0.38, w: circleD + 0.40, h: 0.26,
-          fontSize: 9, fontFace: FN_MD, color: 'C0C0C0',
-          align: 'center', valign: 'top', margin: 0,
-        });
-      }
+  // Sub message
+  if (subMessage) {
+    sl.addText(subMessage, {
+      x: CB_X + CB_PAD, y: CB_Y + 3.55,
+      w: CB_W - CB_PAD * 2, h: 0.50,
+      fontSize: 14, fontFace: FN_MD, color: 'FFFFFF', transparency: 25,
+      align: 'center', valign: 'middle',
+      wrap: false, margin: 0,
     });
   }
 
-  // -- Bottom insight bar (full-width, ACC color, key takeaway)
-  if (insightText) {
-    const barH = 0.50;
-    const barY = SLIDE_H - barH;
-    sl.addShape(pptx.shapes.RECTANGLE, {
-      x: 0, y: barY, w: SLIDE_W, h: barH,
-      fill: { color: c(palette.ACC || 'FF6B35') },
-      line: { width: 0 },
-    });
-    sl.addText(insightText, {
-      x: CB_X, y: barY + 0.02, w: CB_W, h: barH - 0.04,
-      fontSize: 11, fontFace: FN_XB, color: 'FFFFFF', align: 'center', valign: 'middle', margin: 0,
+  // Solution pillars (bottom row, semi-transparent white cards)
+  const pillarCount = pillars.length;
+  if (pillarCount > 0) {
+    const pillY = CB_Y + CB_H - 1.30;
+    const pillH = 1.10;
+    const pillGap = 0.15;
+    const pillW = (CB_W - CB_PAD * 2 - pillGap * (pillarCount - 1)) / pillarCount;
+
+    pillars.forEach((p, i) => {
+      const x = CB_X + CB_PAD + i * (pillW + pillGap);
+
+      // Pill bg (semi-transparent white)
+      sl.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
+        x, y: pillY, w: pillW, h: pillH,
+        rectRadius: 0.08,
+        fill: { color: 'FFFFFF', transparency: 85 },
+        line: { type: 'none' },
+      });
+
+      // Number/icon
+      sl.addText(p.icon || p.num || '', {
+        x: x + 0.10, y: pillY + 0.08, w: 0.60, h: 0.38,
+        fontSize: 18, fontFace: FN_XB, color: 'FFFFFF',
+        align: 'center', valign: 'middle',
+        wrap: false, margin: 0,
+      });
+
+      // Title
+      sl.addText(p.title || '', {
+        x: x + 0.10, y: pillY + 0.45, w: pillW - 0.20, h: 0.30,
+        fontSize: 12, fontFace: FN_XB, color: 'FFFFFF',
+        align: 'left', valign: 'middle',
+        wrap: false, margin: 0,
+      });
+
+      // Description
+      if (p.desc) {
+        sl.addText(p.desc, {
+          x: x + 0.10, y: pillY + 0.75, w: pillW - 0.20, h: 0.28,
+          fontSize: 9, fontFace: FN, color: 'FFFFFF', transparency: 30,
+          align: 'left', valign: 'top',
+          wrap: false, margin: 0,
+        });
+      }
     });
   }
 }
 
-// ━━━ Public API ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ---- Public API ----
 /**
  * Create a highlight/emphasis body slide.
  *
- * @param {Object} sl       - pptxgenjs slide object (already created via pptx.addSlide())
- * @param {Object} pptx     - pptxgenjs Presentation instance (for pptx.shapes.*)
- * @param {Object} opts     - Configuration object
- * @param {string} opts.type           - 'dark-keywords' | 'image-overlay-message' | 'split-impact'
- * @param {string} opts.pageNum        - Page number string, e.g. "05"
- * @param {string} opts.sectionLabel   - Section label, e.g. "01 | 시장 현황"
- * @param {string} opts.headline       - Header headline (ExtraBold, 16pt)
- * @param {string} opts.subtitle       - Header subtitle (Regular, 10pt)
- * @param {string} opts.message        - Central declarative message
- * @param {Array}  opts.keywords       - Array of { icon?, label, sublabel?, description? }
- * @param {string} [opts.insightText]  - Bottom insight bar text (optional)
- * @param {Object} opts.palette        - Color palette: { DOM, SEC, ACC, DK, LT, CD, ... }
+ * @param {Object} sl - pptxgenjs slide object
+ * @param {Object} pptx - pptxgenjs instance
+ * @param {Object} opts
+ * @param {string} opts.type - 'dark-keywords' | 'image-overlay-message' | 'split-impact'
+ * @param {string} opts.chapter - Chapter label (e.g. "Ch1. 현황 진단")
+ * @param {string} opts.msg - Header headline
+ * @param {string} [opts.sub] - Header subtitle
+ * @param {string} opts.message - Central hero message
+ * @param {string} [opts.subMessage] - Sub-copy below hero
+ * @param {Array}  [opts.badges] - (Type A) Array of { value, label }
+ * @param {Array}  [opts.pillars] - (Type C) Array of { num, title, desc }
+ * @param {string} [opts.insightText] - Bottom insight bar text
+ * @param {Object} opts.palette - Color palette
+ * @param {string} [opts.bgImage] - Background image (Type B)
  *
  * @example
  * const createHighlightBody = require('./highlight_body');
  * const slide = pptx.addSlide();
  * createHighlightBody(slide, pptx, {
  *   type: 'dark-keywords',
- *   pageNum: '05',
- *   sectionLabel: '02 | 핵심 전략',
- *   headline: '5가지 핵심 운영 전략',
- *   subtitle: '대회 성공을 위한 통합 수송 전략 체계',
- *   message: '안전하고 효율적인 대회 수송의 새로운 기준',
- *   keywords: [
- *     { icon: '\u{1F6E1}', label: 'SAFETY', sublabel: '안전 관리' },
- *     { icon: '\u{1F552}', label: 'SPEED',  sublabel: '신속 대응' },
- *     { icon: '\u{1F91D}', label: 'TRUST',  sublabel: '신뢰 구축' },
+ *   chapter: 'Ch1. 현황 진단',
+ *   msg: '핵심 문제 선언',
+ *   message: '일관성 없는 서비스,\n통제 불가능한 보안',
+ *   subMessage: '이 구조로는 글로벌 위상을 지탱할 수 없습니다',
+ *   badges: [
+ *     { value: 'G90 vs 카니발', label: '차량 등급 혼재' },
+ *     { value: '촬영 사고 발생', label: '보안 관리 부재' },
  *   ],
- *   insightText: '"경험이 곧 실력입니다"',
- *   palette: { DOM: '#1B3A5C', SEC: '#4A90D9', ACC: '#FF6B35', DK: '#0A1628' },
+ *   palette: { DOM: 'CC0033', SEC: '1E2A3A', ACC: 'E87722', DK: '141B24' },
  * });
  */
 module.exports = function createHighlightBody(sl, pptx, opts) {
@@ -404,15 +403,12 @@ module.exports = function createHighlightBody(sl, pptx, opts) {
     case 'dark-keywords':
       renderDarkKeywords(sl, pptx, safeOpts);
       break;
-
     case 'image-overlay-message':
       renderImageOverlayMessage(sl, pptx, safeOpts);
       break;
-
     case 'split-impact':
       renderSplitImpact(sl, pptx, safeOpts);
       break;
-
     default:
       throw new Error(
         `createHighlightBody: unknown type "${opts.type}". ` +
@@ -421,8 +417,7 @@ module.exports = function createHighlightBody(sl, pptx, opts) {
   }
 };
 
-// Export sub-renderers for direct access if needed
+// Export sub-renderers for direct access
 module.exports.renderDarkKeywords = renderDarkKeywords;
 module.exports.renderImageOverlayMessage = renderImageOverlayMessage;
 module.exports.renderSplitImpact = renderSplitImpact;
-module.exports.addHeader = addHeader;

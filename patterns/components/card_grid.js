@@ -1,39 +1,46 @@
 /**
- * ═══════════════════════════════════════════════════════════════
- *  card_grid.js — 적응형 카드 그리드 컴포넌트
- * ═══════════════════════════════════════════════════════════════
+ * ===============================================================
+ *  card_grid.js -- Adaptive card grid component (AP-01~AP-27 compliant)
+ * ===============================================================
  *
- *  Good Example 분석 기반 핵심 디자인 토큰:
- *   - 카드 내부 패딩: 0.15~0.2" (촘촘하게)
- *   - 카드 간격: 0.08~0.12" (좁게)
- *   - 어두운 배경 카드 적극 활용
- *   - 상단 액센트 바 (0.05" 높이)
- *   - 큰 숫자 (36~48pt) 시각적 앵커
- *   - 둥근 모서리 + 그림자
- *   - 콘텐츠 영역 활용률 85~92%
+ *  AP compliance:
+ *   - AP-14: No emoji characters
+ *   - AP-15: No bold: true (use FN_XB fontFace)
+ *   - AP-21: No top accent bar -> left vertical bar instead
+ *   - AP-24: Shadow factory sdw() (never share shadow objects)
+ *   - AP-25: margin: 0 only (no array)
+ *   - AP-27: wrap: false + margin: 0 on single-line text
+ *   - All shapes use line: { type: 'none' }
  *
- *  사용법:
- *   const cardGrid = require('./card_grid');
- *   cardGrid(sl, pptx, { cards, palette, style: 'dark' });
+ *  Design tokens (from Good Examples):
+ *   - Card internal padding: 0.18"
+ *   - Card gap: 0.10~0.15"
+ *   - Left vertical bar: 0.04" wide, DOM or ACC color
+ *   - Rounded corners: rectRadius 0.08"
+ *   - Shadow: blur:6, offset:3, opacity:0.15
  */
 
-// Content Box 상수 (기본 zone)
+// Content Box constants
 const CB_X = 0.53;
 const CB_Y = 1.77;
 const CB_W = 10.63;
 const CB_H = 5.91;
 const CB_PAD = 0.15;
-const CB_GAP_DEFAULT = 0.10; // 카드 간격 (좁게)
+const CB_GAP_DEFAULT = 0.10;
 
-// zone 기반 레이아웃 지원 (Option B)
+// zone-based layout support
 const { DENSITY, inferDensity, assertZoneSize } = require('../layouts/zone_helper');
 
 const FN_XB = 'Pretendard ExtraBold';
 const FN_MD = 'Pretendard Medium';
-const FN_TN = 'Pretendard Thin';
+const FN    = 'Pretendard';
+
+// Shadow factory (AP-24)
+const sdw = () => ({ type: 'outer', blur: 6, offset: 3, angle: 270, color: '000000', opacity: 0.15 });
+const sdwHero = () => ({ type: 'outer', blur: 10, offset: 5, angle: 270, color: '000000', opacity: 0.20 });
 
 /**
- * 카드 수에 따라 최적 그리드 자동 결정
+ * Auto-determine optimal grid from card count
  */
 function resolveGrid(n) {
   if (n <= 1) return { cols: 1, rows: 1 };
@@ -41,11 +48,11 @@ function resolveGrid(n) {
   if (n === 3) return { cols: 3, rows: 1 };
   if (n === 4) return { cols: 2, rows: 2 };
   if (n <= 6) return { cols: 3, rows: 2 };
-  return { cols: 4, rows: 2 }; // 7-8개
+  return { cols: 4, rows: 2 };
 }
 
 /**
- * 텍스트 길이에 따라 폰트 크기 자동 조절
+ * Auto-adjust font size based on text length
  */
 function adaptFontSize(text, baseSize, minSize) {
   if (!text) return baseSize;
@@ -57,220 +64,229 @@ function adaptFontSize(text, baseSize, minSize) {
 }
 
 /**
- * 기본 스타일 카드 렌더링
- * 밝은 배경, 어두운 텍스트, 상단 액센트 바
+ * Default style card: light bg, dark text, left vertical bar
  */
-function renderDefaultCard(sl, pptx, { x, y, w, h, card, palette, iconSize }) {
+function renderDefaultCard(sl, pptx, { x, y, w, h, card, palette }) {
   const PAD = 0.18;
   const titleSize = adaptFontSize(card.title, 18, 14);
   const bodySize = adaptFontSize(card.body, 13, 11);
 
-  // 카드 배경 (둥근 모서리 + 그림자)
+  // Card background (rounded corners + shadow)
   sl.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
     x, y, w, h,
-    rectRadius: 0.12,
+    rectRadius: 0.08,
     fill: { color: palette.CD || 'F0F2F5' },
-    shadow: { type: 'outer', color: '000000', blur: 8, offset: 2, angle: 315, opacity: 0.15 },
+    line: { type: 'none' },
+    shadow: sdw(),
   });
 
-  // 상단 액센트 바
+  // Left vertical bar (AP-21: replaces top accent bar)
   sl.addShape(pptx.shapes.RECTANGLE, {
-    x: x + 0.01, y: y + 0.01, w: w - 0.02, h: 0.05,
-    fill: { color: palette.ACC || '3366CC' },
-    rectRadius: 0.03,
+    x, y: y + 0.10, w: 0.04, h: h - 0.20,
+    fill: { color: palette.ACC || palette.DOM || '3366CC' },
+    line: { type: 'none' },
   });
 
-  let contentY = y + 0.25;
+  let contentY = y + PAD;
 
-  // 아이콘 영역 (있을 경우)
-  if (card.icon) {
-    sl.addText(card.icon, {
-      x: x + PAD, y: contentY, w: 0.6, h: 0.6,
-      fontSize: iconSize || 28, align: 'center', valign: 'middle',
+  // Icon area (if provided as base64 PNG data)
+  if (card.iconData) {
+    sl.addImage({
+      data: card.iconData,
+      x: x + PAD + 0.08, y: contentY, w: 0.5, h: 0.5,
     });
-    contentY += 0.65;
+    contentY += 0.55;
   }
 
-  // 타이틀
+  // Title
   sl.addText(card.title || '', {
     x: x + PAD, y: contentY, w: w - PAD * 2, h: 0.5,
     fontSize: titleSize, fontFace: FN_XB, color: palette.TD || '1A1A2E',
     valign: 'top', wrap: true,
+    line: { type: 'none' },
   });
   contentY += 0.55;
 
-  // 구분선 (얇은 컬러 라인)
+  // Thin colored divider line
   sl.addShape(pptx.shapes.RECTANGLE, {
-    x: x + PAD, y: contentY, w: 1.2, h: 0.03,
-    fill: { color: palette.ACC || '3366CC' },
+    x: x + PAD, y: contentY, w: 1.2, h: 0.015,
+    fill: { color: palette.ACC || palette.DOM || '3366CC' },
+    line: { type: 'none' },
   });
-  contentY += 0.18;
+  contentY += 0.15;
 
-  // 본문
+  // Body text
   if (card.body) {
     sl.addText(card.body, {
       x: x + PAD, y: contentY, w: w - PAD * 2, h: h - (contentY - y) - PAD,
       fontSize: bodySize, fontFace: FN_MD, color: palette.TG || '6B7280',
       valign: 'top', wrap: true, lineSpacingMultiple: 1.4,
+      line: { type: 'none' },
     });
   }
 }
 
 /**
- * 다크 스타일 카드 렌더링
- * 어두운 배경, 밝은 텍스트 — 시각적 무게감 확보
+ * Dark style card: dark bg, light text, left vertical bar
  */
-function renderDarkCard(sl, pptx, { x, y, w, h, card, palette, iconSize }) {
+function renderDarkCard(sl, pptx, { x, y, w, h, card, palette }) {
   const PAD = 0.18;
   const titleSize = adaptFontSize(card.title, 18, 14);
   const bodySize = adaptFontSize(card.body, 13, 11);
 
-  // 카드 배경 (어두운 색상)
+  // Card background (dark color)
   sl.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
     x, y, w, h,
-    rectRadius: 0.12,
-    fill: { color: palette.DOM || '1B2A4A' },
-    shadow: { type: 'outer', color: '000000', blur: 10, offset: 3, angle: 315, opacity: 0.25 },
+    rectRadius: 0.08,
+    fill: { color: palette.SEC || palette.DOM || '1B2A4A' },
+    line: { type: 'none' },
+    shadow: sdw(),
   });
 
-  // 상단 액센트 바
-  sl.addShape(pptx.shapes.RECTANGLE, {
-    x: x + 0.01, y: y + 0.01, w: w - 0.02, h: 0.05,
-    fill: { color: palette.ACC || '00E5FF' },
-    rectRadius: 0.03,
-  });
+  // Ghost number (decorative, top-left)
+  if (card.ghostNum) {
+    sl.addText(card.ghostNum, {
+      x: x + 0.08, y: y + 0.05, w: 1.0, h: 0.7,
+      fontSize: 32, fontFace: FN_XB, color: 'FFFFFF', transparency: 85,
+      align: 'left', valign: 'top',
+      wrap: false, margin: 0,
+    });
+  }
 
-  let contentY = y + 0.25;
+  let contentY = y + (card.ghostNum ? 0.55 : PAD);
 
-  // 아이콘 (밝은 배경 원형 위)
-  if (card.icon) {
+  // Icon (with light circle background for contrast on dark card)
+  if (card.iconData) {
     sl.addShape(pptx.shapes.OVAL, {
       x: x + PAD, y: contentY, w: 0.55, h: 0.55,
       fill: { color: palette.ACC || '00E5FF', transparency: 80 },
+      line: { type: 'none' },
     });
-    sl.addText(card.icon, {
-      x: x + PAD, y: contentY, w: 0.55, h: 0.55,
-      fontSize: iconSize || 24, align: 'center', valign: 'middle',
+    sl.addImage({
+      data: card.iconData,
+      x: x + PAD + 0.05, y: contentY + 0.05, w: 0.45, h: 0.45,
     });
     contentY += 0.65;
   }
 
-  // 타이틀
+  // Title
   sl.addText(card.title || '', {
-    x: x + PAD, y: contentY, w: w - PAD * 2, h: 0.5,
-    fontSize: titleSize, fontFace: FN_XB, color: palette.W || 'FFFFFF',
-    valign: 'top', wrap: true,
+    x: x + PAD, y: contentY, w: w - PAD * 2, h: 0.32,
+    fontSize: titleSize > 14 ? 13 : titleSize, fontFace: FN_XB, color: 'FFFFFF',
+    valign: 'middle', wrap: false, margin: 0,
+    line: { type: 'none' },
   });
-  contentY += 0.55;
+  contentY += 0.38;
 
-  // 구분선
+  // Divider line
   sl.addShape(pptx.shapes.RECTANGLE, {
-    x: x + PAD, y: contentY, w: 1.2, h: 0.03,
+    x: x + PAD, y: contentY, w: w - PAD * 2 - 0.20, h: 0.015,
     fill: { color: palette.ACC || '00E5FF', transparency: 40 },
+    line: { type: 'none' },
   });
-  contentY += 0.18;
+  contentY += 0.12;
 
-  // 본문
+  // Body
   if (card.body) {
     sl.addText(card.body, {
       x: x + PAD, y: contentY, w: w - PAD * 2, h: h - (contentY - y) - PAD,
-      fontSize: bodySize, fontFace: FN_MD, color: 'CCCCCC',
-      valign: 'top', wrap: true, lineSpacingMultiple: 1.4,
+      fontSize: bodySize > 12 ? 11 : bodySize, fontFace: FN_MD, color: 'CCCCCC',
+      valign: 'top', wrap: true, lineSpacingMultiple: 1.35,
+      line: { type: 'none' },
     });
   }
 }
 
 /**
- * KPI 스타일 카드 렌더링
- * 큰 숫자가 시각적 앵커, 밀도감 최대
+ * KPI style card: large number anchor, left vertical bar
  */
 function renderKpiCard(sl, pptx, { x, y, w, h, card, palette }) {
   const PAD = 0.18;
-  const numberSize = card.number && card.number.length > 5 ? 32 : 42;
+  const numberSize = card.number && card.number.length > 5 ? 24 : card.number && card.number.length > 3 ? 28 : 34;
 
-  // 카드 배경
+  // Card background
   sl.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
     x, y, w, h,
-    rectRadius: 0.12,
-    fill: { color: palette.DK || '0A0A1E' },
-    shadow: { type: 'outer', color: '000000', blur: 10, offset: 3, angle: 315, opacity: 0.3 },
+    rectRadius: 0.08,
+    fill: { color: palette.CD || 'F0F2F5' },
+    line: { type: 'none' },
+    shadow: sdw(),
   });
 
-  // 상단 액센트 바
+  // Left vertical bar (AP-21)
   sl.addShape(pptx.shapes.RECTANGLE, {
-    x: x + 0.01, y: y + 0.01, w: w - 0.02, h: 0.05,
-    fill: { color: palette.ACC || '00E5FF' },
-    rectRadius: 0.03,
+    x, y: y + 0.10, w: 0.04, h: h - 0.20,
+    fill: { color: palette.ACC || palette.DOM || '3366CC' },
+    line: { type: 'none' },
   });
 
-  let contentY = y + 0.3;
+  let contentY = y + 0.10;
 
-  // 아이콘 (있을 경우)
-  if (card.icon) {
-    sl.addShape(pptx.shapes.OVAL, {
-      x: x + PAD, y: contentY, w: 0.5, h: 0.5,
-      fill: { color: palette.SEC || '6C3AE0', transparency: 60 },
-    });
-    sl.addText(card.icon, {
-      x: x + PAD, y: contentY, w: 0.5, h: 0.5,
-      fontSize: 22, align: 'center', valign: 'middle',
-    });
-    contentY += 0.6;
-  }
-
-  // 큰 숫자 (시각적 앵커)
+  // Big number (visual anchor)
   if (card.number) {
     sl.addText(card.number, {
-      x: x + PAD, y: contentY, w: w - PAD * 2, h: 0.7,
-      fontSize: numberSize, fontFace: FN_XB, color: palette.ACC || '00E5FF',
-      valign: 'middle',
+      x: x + 0.20, y: contentY, w: w - 0.35, h: 0.50,
+      fontSize: numberSize, fontFace: FN_XB, color: palette.ACC || palette.DOM || '3366CC',
+      align: 'left', valign: 'middle',
+      wrap: false, margin: 0,
     });
-    contentY += 0.75;
+    contentY += 0.52;
   }
 
-  // 타이틀
+  // Title
   sl.addText(card.title || '', {
-    x: x + PAD, y: contentY, w: w - PAD * 2, h: 0.4,
-    fontSize: 15, fontFace: FN_XB, color: palette.W || 'FFFFFF',
-    valign: 'top', wrap: true,
+    x: x + 0.20, y: contentY, w: w - 0.35, h: 0.26,
+    fontSize: 13, fontFace: FN_XB, color: palette.TD || '1A1A2E',
+    align: 'left', valign: 'middle',
+    wrap: false, margin: 0,
   });
-  contentY += 0.45;
+  contentY += 0.30;
 
-  // 본문
+  // Divider line
+  sl.addShape(pptx.shapes.RECTANGLE, {
+    x: x + 0.20, y: contentY, w: w - 0.40, h: 0.015,
+    fill: { color: palette.SB || 'DDDDDD' },
+    line: { type: 'none' },
+  });
+  contentY += 0.08;
+
+  // Body description
   if (card.body) {
     sl.addText(card.body, {
-      x: x + PAD, y: contentY, w: w - PAD * 2, h: h - (contentY - y) - PAD,
-      fontSize: 11, fontFace: FN_MD, color: 'AAAAAA',
-      valign: 'top', wrap: true, lineSpacingMultiple: 1.3,
+      x: x + 0.20, y: contentY, w: w - 0.35, h: h - (contentY - y) - PAD,
+      fontSize: 10, fontFace: FN_MD, color: palette.TG || '888888',
+      align: 'left', valign: 'top',
+      lineSpacingMultiple: 1.3, wrap: true,
     });
   }
 }
 
 /**
- * 이미지 오버레이 스타일 카드
- * 배경 이미지 + 그라데이션 오버레이 + 텍스트
+ * Image overlay style card: placeholder bg + gradient overlay + text
  */
 function renderImageOverlayCard(sl, pptx, { x, y, w, h, card, palette }) {
   const PAD = 0.18;
 
-  // 이미지 플레이스홀더 배경
-  // [IMAGE: card.image 또는 관련 이미지]
+  // Image placeholder background
+  // [IMAGE: card.image or relevant image]
   sl.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
     x, y, w, h,
-    rectRadius: 0.12,
+    rectRadius: 0.08,
     fill: { color: palette.LT || 'E8E8F0' },
+    line: { type: 'none' },
   });
 
-  // 이미지 영역 표시
-  sl.addText('📷 이미지 영역', {
+  // Placeholder text (AP-14: no emoji)
+  sl.addText('Image Area', {
     x, y: y + 0.3, w, h: 0.3,
     fontSize: 9, color: palette.TG || '999999', align: 'center',
+    wrap: false, margin: 0,
   });
 
-  // 그라데이션 오버레이 (하단→상단, 불투명→투명)
+  // Gradient overlay (bottom->top, opaque->transparent)
   sl.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
     x, y, w, h,
-    rectRadius: 0.12,
+    rectRadius: 0.08,
     fill: {
       type: 'gradient',
       stops: [
@@ -280,9 +296,10 @@ function renderImageOverlayCard(sl, pptx, { x, y, w, h, card, palette }) {
       ],
       direction: 'down',
     },
+    line: { type: 'none' },
   });
 
-  // 하단에 텍스트 (오버레이의 불투명 부분)
+  // Bottom text (on the opaque part of overlay)
   const textY = y + h - 1.3;
 
   sl.addText(card.title || '', {
@@ -294,6 +311,7 @@ function renderImageOverlayCard(sl, pptx, { x, y, w, h, card, palette }) {
   sl.addShape(pptx.shapes.RECTANGLE, {
     x: x + PAD, y: textY + 0.5, w: 1.0, h: 0.03,
     fill: { color: palette.ACC || '00E5FF' },
+    line: { type: 'none' },
   });
 
   if (card.body) {
@@ -306,29 +324,25 @@ function renderImageOverlayCard(sl, pptx, { x, y, w, h, card, palette }) {
 }
 
 /**
- * 메인 함수: 적응형 카드 그리드
+ * Main function: Adaptive card grid
  *
- * @param {Object} sl - pptxgenjs 슬라이드 객체
- * @param {Object} pptx - pptxgenjs 인스턴스
+ * @param {Object} sl - pptxgenjs slide object
+ * @param {Object} pptx - pptxgenjs instance
  * @param {Object} options
- * @param {Array} options.cards - 카드 데이터 배열
- *   [{ title, body, icon?, number?, image? }]
- * @param {Object} options.palette - 색상 팔레트
+ * @param {Array} options.cards - Card data array
+ *   [{ title, body, number?, ghostNum?, iconData? }]
+ * @param {Object} options.palette - Color palette
  * @param {string} [options.style='default'] - 'default'|'dark'|'kpi'|'image-overlay'
- * @param {number} [options.iconSize=28] - 아이콘 크기 (pt)
- * @param {Object} [options.gridOverride] - { cols, rows } 수동 지정
- * @param {Object} [options.zone] - (Option B) { x, y, w, h } 렌더링 영역.
- *   생략 시 Content Box 전체(CB_FULL)를 사용 → 하위 호환.
- * @param {string} [options.density] - (Option B) 'full'|'half'|'third'|'quarter'|'strip'.
- *   생략 시 zone 크기로 자동 추론. zone이 density의 최소 높이를 못 채우면 throw.
- * @param {number} [options.gap] - (Option B) 카드 간 gap override. 생략 시 density.gap 사용.
+ * @param {Object} [options.gridOverride] - { cols, rows } manual override
+ * @param {Object} [options.zone] - { x, y, w, h } render area. Defaults to Content Box.
+ * @param {string} [options.density] - 'full'|'half'|'third'|'quarter'|'strip'
+ * @param {number} [options.gap] - Card gap override
  */
 function cardGrid(sl, pptx, options = {}) {
   const {
     cards = [],
     palette = {},
     style = 'default',
-    iconSize = 28,
     gridOverride,
     zone,
     density: densityKey,
@@ -337,10 +351,10 @@ function cardGrid(sl, pptx, options = {}) {
 
   if (cards.length === 0) return;
 
-  // zone 기본값 = Content Box 전체 (하위 호환)
+  // zone default = Content Box full (backward compatible)
   const z = zone || { x: CB_X, y: CB_Y, w: CB_W, h: CB_H };
 
-  // density 추론/검증
+  // density inference/validation
   const dKey = densityKey || inferDensity(z);
   assertZoneSize(z, dKey);
   const d = DENSITY[dKey];
@@ -348,11 +362,11 @@ function cardGrid(sl, pptx, options = {}) {
 
   const { cols, rows } = gridOverride || resolveGrid(cards.length);
 
-  // 카드 크기 계산 (zone 기준)
+  // Card size calculation (zone-based)
   const cardW = (z.w - gap * (cols - 1)) / cols;
   const cardH = (z.h - gap * (rows - 1)) / rows;
 
-  // 렌더러 선택
+  // Renderer selection
   const renderers = {
     default: renderDefaultCard,
     dark: renderDarkCard,
@@ -361,14 +375,14 @@ function cardGrid(sl, pptx, options = {}) {
   };
   const render = renderers[style] || renderDefaultCard;
 
-  // 각 카드 렌더링 (zone 기준 좌표)
+  // Render each card (zone-relative coordinates)
   cards.forEach((card, i) => {
     const col = i % cols;
     const row = Math.floor(i / cols);
     const x = z.x + col * (cardW + gap);
     const y = z.y + row * (cardH + gap);
 
-    render(sl, pptx, { x, y, w: cardW, h: cardH, card, palette, iconSize, density: d });
+    render(sl, pptx, { x, y, w: cardW, h: cardH, card, palette, density: d });
   });
 }
 

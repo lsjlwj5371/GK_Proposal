@@ -89,18 +89,26 @@ cardGrid(sl, pptx, {
 
 > **핵심 원칙**: 패턴의 "뼈대"(그리드, 비율)는 콘텐츠에 따라 유동적으로 변하고, "피부"(그림자, 둥근 모서리, 색상, 오버레이)만 레퍼런스에서 검증된 것을 고정 적용한다.
 
-### 컴포넌트 코드 알려진 버그 (Phase 3 전 반드시 확인)
+### 컴포넌트 AP 준수 현황 (v2 리팩토링 완료)
 
-| 컴포넌트 | 버그 | 우회 방법 |
-|---------|------|---------|
-| **highlight_body.js** | addHeader OOXML 중복으로 파일 손상 | **수동으로 강조 슬라이드 구현** |
-| **ending.js Type B** | 히어로/서브 텍스트 위치 역전 | **수동으로 마무리 슬라이드 구현** |
-| **pptxgenjs shadow** | shadow 객체를 내부 mutate하여 공유 시 값이 기하급수적 증가 (AP-24) | **`sdw()` 팩토리 함수로 매번 새 객체 생성** |
-| **pptxgenjs margin** | `margin: [t,r,b,l]` 배열이 OOXML inset에 잘못 매핑됨 (AP-25) | **`margin: 0` 또는 단일 숫자만 사용** |
-| **pptxgenjs Content_Types** | 슬라이드 수만큼 phantom slideMaster 엔트리 생성 (AP-26) | AP-24 준수 시 실질 영향 없음 |
-| **pptxgenjs wrap** | addText 기본값 wrap="square"로 단일줄 텍스트 강제 줄바꿈 (AP-27) | **`wrap: false, margin: 0`** 단일줄 텍스트에 필수 적용 |
+모든 컴포넌트가 AP-01~AP-27을 준수하도록 리팩토링되었습니다. **5개 컴포넌트 모두 사용 가능합니다.**
 
-> **중요**: 위 버그가 수정될 때까지, **강조 페이지와 마무리 페이지는 컴포넌트 함수를 사용하지 말고 수동으로 구현**한다. cover.js, divider.js, card_grid.js는 정상 작동한다.
+| 컴포넌트 | v2 변경사항 |
+|---------|-----------|
+| **cover.js** | BIFF 좌측정렬 형식(x=0.57), `line:{type:'none'}`, `wrap:false`, `sdw()` 팩토리 |
+| **divider.js** | `charSpacing` 제거(AP-12), `line:{type:'none'}`, `wrap:false`, subText 파라미터 추가 |
+| **card_grid.js** | 상단 accent bar 제거(AP-21) -> 좌측 수직 바, 이모지 제거(AP-14), `sdw()` 팩토리, ghostNum 지원 |
+| **highlight_body.js** | addHeader 제거 -> 수동 헤더 렌더링, API 변경(badges/pillars), `line:{type:'none'}` |
+| **ending.js** | 히어로=약속카피/서브=감사합니다 올바른 순서, `charSpacing` 제거, promiseText 필수 |
+
+**pptxgenjs 자체 버그 (컴포넌트에서 이미 우회 처리됨):**
+
+| 버그 | 우회 방법 |
+|------|---------|
+| shadow 객체 내부 mutate (AP-24) | **`sdw()` 팩토리 함수로 매번 새 객체 생성** |
+| `margin: [t,r,b,l]` 배열 매핑 오류 (AP-25) | **`margin: 0` 또는 단일 숫자만 사용** |
+| phantom slideMaster 엔트리 (AP-26) | AP-24 준수 시 실질 영향 없음 |
+| addText 기본값 wrap="square" 강제 줄바꿈 (AP-27) | **`wrap: false, margin: 0`** 단일줄 텍스트에 필수 적용 |
 
 ## 아이콘 시스템 (Lineicons SVG)
 
