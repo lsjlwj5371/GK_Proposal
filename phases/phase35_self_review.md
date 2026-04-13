@@ -72,6 +72,7 @@ PPT 코드를 생성한 직후, 사용자에게 결과물을 전달하기 전에
 - [AP-24] shadow 옵션이 공유 상수가 아닌 팩토리 함수(`sdw()`)로 매번 새 객체를 생성하는가?
 - [AP-25] addText의 margin에 배열(`[t,r,b,l]`)이 사용되지 않았는가? (`margin: 0` 또는 단일 숫자만 허용)
 - [AP-26] (선택) 생성된 PPTX의 `[Content_Types].xml`에 phantom slideMaster 엔트리가 없는가?
+- [AP-27] 단일 줄 텍스트(라벨, 타이틀, 숫자)에 `wrap: false, margin: 0`이 적용되어 있는가?
 
 **10. 여백 정량 기준 검사**
 - 슬라이드 Fill Rate가 65% 이상인가?

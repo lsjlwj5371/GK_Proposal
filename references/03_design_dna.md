@@ -338,3 +338,4 @@ sl.addShape(pptx.shapes.RECTANGLE, {
 - [ ] 고스트 넘버 색상이 E0E3E8인가?
 - [ ] 카드 상단에 가로 accent bar가 없는가? (AP-21)
 - [ ] charSpacing이 한글 텍스트에 적용되지 않았는가? (AP-12)
+- [ ] 단일 줄 텍스트에 `wrap: false, margin: 0`이 적용되었는가? (AP-27 — 강제 줄바꿈 방지)

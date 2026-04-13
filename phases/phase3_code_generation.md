@@ -59,13 +59,17 @@ const FN    = 'Pretendard';           // Regular weight
 const FN_TN = 'Pretendard Thin';
 ```
 
-**표지 (createCover) -- S01:**
+**표지 (createCover) -- S01 (BIFF 형식 통일):**
 ```
-x=0.57"  라벨 y=2.43" 18pt Medium
-         메인카피 y=2.91" 40~54pt ExtraBold
-         서브카피 y=4.83" 14pt Thin
+x=0.57"  라벨 y=2.43" 10pt Medium (pill badge, DOM fill)
+         메인카피(히어로) y=2.91" 40~54pt ExtraBold -- 카피라이트 문구
+           -> 제안서 제목이 아니라 "글로벌 OO의 격, 의전에서 완성하다" 같은 브랜드 카피
+         서브카피 y=4.83" 14pt Thin -- 실제 제안 설명
+           -> "XX 의전 서비스 제안" 같은 구체적 제안 설명을 작게 배치
          bgImage 파라미터로 AI 배경 적용
 ```
+
+> **표지 히어로 규칙**: 표지의 가장 큰 텍스트(히어로)는 **브랜드 카피라이팅 문구**여야 한다. 실제 제안 제목은 서브카피(14pt)로 아래에 작게 배치한다. 이는 마무리 페이지의 "약속/다짐 카피" 히어로와 대칭 구조를 이룬다.
 
 **간지 (createDivider) -- S02:**
 ```

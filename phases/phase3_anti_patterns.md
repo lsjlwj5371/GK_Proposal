@@ -443,3 +443,43 @@ zip.file('[Content_Types].xml', ct);
 ```
 
 **참고**: AP-24(shadow mutation)가 주 손상 원인이므로, AP-24 준수가 우선. AP-26은 보조적 방어선.
+
+---
+
+## [AP-27] 단일 줄 텍스트에 wrap: false 필수 -- 강제 줄바꿈 방지
+
+pptxgenjs의 addText 기본값은 `wrap: true` (OOXML `wrap="square"`)로, 도형 너비에 맞춰 텍스트를 강제 줄바꿈한다. 단일 줄로 표시해야 하는 텍스트(라벨, 타이틀, 숫자, 뱃지 등)에서 의도치 않은 2줄 렌더링이 발생한다.
+
+| 텍스트 유형 | wrap 설정 | margin |
+|------------|----------|--------|
+| 챕터 라벨, 헤드라인, 부제목 | `wrap: false` | `margin: 0` |
+| KPI 숫자, 카드 타이틀, 뱃지 텍스트 | `wrap: false` | `margin: 0` |
+| 고스트 넘버, 기간 라벨, 스텝 번호 | `wrap: false` | `margin: 0` |
+| 본문 설명 (2줄 이상 의도) | `wrap: true` | `margin: 0` |
+| 히어로 카피 (명시적 \n 포함) | `wrap: true` | 기본값 허용 |
+
+```
+(X) 나쁜 예:
+sl.addText('서비스 수준 일관성 부재', {
+  x: 1.0, y: 2.0, w: 3.0, h: 0.30,
+  fontSize: 13, fontFace: FN_XB,
+});  // wrap 미지정 → wrap="square" → 의도치 않은 줄바꿈
+
+(O) 좋은 예:
+sl.addText('서비스 수준 일관성 부재', {
+  x: 1.0, y: 2.0, w: 3.0, h: 0.30,
+  fontSize: 13, fontFace: FN_XB,
+  wrap: false, margin: 0,
+});  // wrap="none" → 한 줄 유지
+```
+
+**hdr() 함수 표준**:
+```javascript
+function hdr(sl, pptx, { chapter, msg, sub }) {
+  sl.addText(chapter, { ..., wrap: false, margin: 0 });
+  sl.addText(msg, { ..., wrap: false, margin: 0 });
+  if (sub) sl.addText(sub, { ..., wrap: false, margin: 0 });
+}
+```
+
+**자동 검증**: 생성된 PPTX의 slide XML에서 `wrap="square"`인 `bodyPr`의 텍스트 내용이 단일 줄인지 확인. 단일 줄 텍스트에 `wrap="square"`가 있으면 위반.
