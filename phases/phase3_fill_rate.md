@@ -103,18 +103,24 @@ const INSIGHT_FONT = 14; // 최소 14pt -- 핵심 결론이면 16pt까지 허용
 3. **겹침 방지 필수**: 위의 카드/콘텐츠와 최소 0.15" 간격 확보
 4. **Content Box 경계 내 배치**: insight box 하단이 y=7.68"을 넘지 않도록
 5. **한 챕터 내 1~2개 제한**: 너무 자주 등장하면 강조 효과 상실
+6. **margin 배열 사용 금지**: `margin: [0, 24, 0, 24]`는 pptxgenjs 매핑 버그로 텍스트가 아래로 밀림. `margin: 0`과 `align: 'center'`를 사용 (AP-25 참조)
 
 ---
 
 ## pptxgenjs 꾸밈효과 적극 활용 가이드
 
-**1. 그림자 (Shadow) -- 사용 금지 (Flat Design 원칙)**
+**1. 그림자 (Shadow) -- 카드/블록에 적극 권장**
 
-Asan/Yonsei 레퍼런스에서 확인된 Flat Design DNA를 따른다.
-- **모든 도형에 shadow 속성을 적용하지 않는다.**
-- 시각적 깊이감은 **색상 대비(DOM/SEC/LT 레이어링)**와 **배경색 차이**로 표현한다.
-- 카드 구분이 필요하면 배경색 명도 차이(예: LT 위에 W 카드)로 해결한다.
-- `shadow: { ... }` 코드가 생성되면 **QA 위반(AP-flat)**으로 처리한다.
+카드, 블록 등 콘텐츠 도형에 그림자를 적용하여 깊이감과 고급스러움을 부여한다.
+- **카드/블록**: 표준 shadow 적용 (blur:6, offset:3, opacity:0.15)
+- **히어로/강조 블록**: 강조 shadow 적용 (blur:10, offset:5, opacity:0.20)
+- **미적용 대상**: accent bar, 구분선, 배경 도형, pill badge, 고스트 넘버 등 장식 요소
+- 상세 규격은 `03_design_dna.md` 섹션 1 참조
+
+```javascript
+// 표준 shadow (카드, 블록)
+shadow: { type: 'outer', blur: 6, offset: 3, angle: 270, color: '000000', opacity: 0.15 }
+```
 
 **2. 투명도 (Transparency)** -- 오버레이, 배경 도형에 적용:
 ```javascript

@@ -95,6 +95,9 @@ cardGrid(sl, pptx, {
 |---------|------|---------|
 | **highlight_body.js** | addHeader OOXML 중복으로 파일 손상 | **수동으로 강조 슬라이드 구현** |
 | **ending.js Type B** | 히어로/서브 텍스트 위치 역전 | **수동으로 마무리 슬라이드 구현** |
+| **pptxgenjs shadow** | shadow 객체를 내부 mutate하여 공유 시 값이 기하급수적 증가 (AP-24) | **`sdw()` 팩토리 함수로 매번 새 객체 생성** |
+| **pptxgenjs margin** | `margin: [t,r,b,l]` 배열이 OOXML inset에 잘못 매핑됨 (AP-25) | **`margin: 0` 또는 단일 숫자만 사용** |
+| **pptxgenjs Content_Types** | 슬라이드 수만큼 phantom slideMaster 엔트리 생성 (AP-26) | AP-24 준수 시 실질 영향 없음 |
 
 > **중요**: 위 버그가 수정될 때까지, **강조 페이지와 마무리 페이지는 컴포넌트 함수를 사용하지 말고 수동으로 구현**한다. cover.js, divider.js, card_grid.js는 정상 작동한다.
 

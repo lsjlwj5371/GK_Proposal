@@ -68,6 +68,10 @@ PPT 코드를 생성한 직후, 사용자에게 결과물을 전달하기 전에
 - [AP-20] divider Type C 사용 시 bgImage 경로 검증 로직이 있는가?
 - [AP-21] 카드 상단에 얇은 색 바(accent bar)가 없는가?
 - [AP-22] 연속 3장 이상 동일 시각 구조를 사용하지 않았는가? LR 비율 40% 이상인가?
+- [AP-23] addShape에 문자열 `'oval'` 이 사용되지 않았는가? (`'ellipse'` 또는 `pptx.shapes.OVAL` 사용 필수)
+- [AP-24] shadow 옵션이 공유 상수가 아닌 팩토리 함수(`sdw()`)로 매번 새 객체를 생성하는가?
+- [AP-25] addText의 margin에 배열(`[t,r,b,l]`)이 사용되지 않았는가? (`margin: 0` 또는 단일 숫자만 허용)
+- [AP-26] (선택) 생성된 PPTX의 `[Content_Types].xml`에 phantom slideMaster 엔트리가 없는가?
 
 **10. 여백 정량 기준 검사**
 - 슬라이드 Fill Rate가 65% 이상인가?
