@@ -38,7 +38,7 @@ description: "GroundK(그라운드케이) 제안서 PPT 자동 생성 스킬. /g
 
 | 컴포넌트 | 경로 | 변형 | 용도 |
 |---------|------|------|------|
-| **표지** | `patterns/components/cover.js` | A(미니멀), B(시네마틱) | 표지 페이지 |
+| **표지** | `patterns/components/cover.js` | A(풀블리드+그라데이션), B(좌우분할) | 표지 페이지 -- bgImage 필수 권장 |
 | **간지** | `patterns/components/divider.js` | A(센터), B(사이드바), C(이미지분할), D(브랜드그래픽) | 챕터 구분 |
 | **카드 그리드** | `patterns/components/card_grid.js` | default, dark, kpi, image-overlay | 본문 카드 레이아웃 |
 | **강조 본문** | `patterns/components/highlight_body.js` | dark-keywords, image-overlay-message, split-impact | 클라이맥스 -- addHeader OOXML 버그, 수동 구현 필수 |
@@ -65,10 +65,16 @@ const cardGrid = require('./patterns/components/card_grid');
 const createDivider = require('./patterns/components/divider');
 const createCover = require('./patterns/components/cover');
 
-// 표지 (미니멀 타입)
+// 표지 A (풀블리드 — 배경 이미지 + DOM 그라데이션 오버레이)
 createCover(sl, pptx, {
   type: 'A', title: '제안서 제목', companyName: '(주)그라운드케이',
-  palette, label: '정성적 제안서'
+  palette, label: 'VIP Protocol', bgImage: '/path/to/cover.jpg'
+});
+
+// 표지 B (좌우 분할 — 좌측 텍스트 45% + 우측 이미지 55%)
+createCover(sl, pptx, {
+  type: 'B', title: '제안서 제목', companyName: '(주)그라운드케이',
+  palette, label: 'Premium Service', bgImage: '/path/to/cover.jpg'
 });
 
 // 간지 (사이드바 타입 + 하위 목차)
@@ -95,10 +101,10 @@ cardGrid(sl, pptx, {
 
 | 컴포넌트 | v2 변경사항 |
 |---------|-----------|
-| **cover.js** | BIFF 좌측정렬 형식(x=0.57), `line:{type:'none'}`, `wrap:false`, `sdw()` 팩토리 |
+| **cover.js** | v3: A(풀블리드+그라데이션), B(좌우분할)로 전면 교체. 장식 도형 제거, bgImage 중심 설계. 이미지 없을 시 DOM 솔리드 폴백 |
 | **divider.js** | `charSpacing` 제거(AP-12), `line:{type:'none'}`, `wrap:false`, subText 파라미터 추가 |
 | **card_grid.js** | 상단 accent bar 제거(AP-21) -> 좌측 수직 바, 이모지 제거(AP-14), `sdw()` 팩토리, ghostNum 지원 |
-| **highlight_body.js** | addHeader 제거 -> 수동 헤더 렌더링, API 변경(badges/pillars), `line:{type:'none'}` |
+| **highlight_body.js** | addHeader 제거 -> 수동 헤더 렌더링, API 변경(badges/pillars), `line:{type:'none'}`. v3: 배지 fill을 DK로 변경(AP-28), 배지-인사이트 겹침 해소(AP-29) |
 | **ending.js** | 히어로=약속카피/서브=감사합니다 올바른 순서, `charSpacing` 제거, promiseText 필수 |
 
 **pptxgenjs 자체 버그 (컴포넌트에서 이미 우회 처리됨):**

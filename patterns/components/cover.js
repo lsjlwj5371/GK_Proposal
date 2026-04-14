@@ -1,9 +1,13 @@
 /**
- * cover.js - Cover slide pattern components (AP-01~AP-27 compliant)
- *
+ * cover.js - Cover slide pattern components (AP-01~AP-29 compliant)
+ * -----------------------------------------------------------------
  * Two cover variants:
- *   Type A "minimal" - White bg, BIFF left-aligned title, badge label, gradient circles
- *   Type B "cinematic" - Dark bg, BIFF left-aligned title, brand graphic circles
+ *   Type A "fullbleed"  - Full background image + DOM gradient overlay + BIFF text
+ *   Type B "split"      - Left text (45%) + right image (55%), vertical split
+ *
+ * Both types accept an optional bgImage parameter:
+ *   - bgImage provided  -> image is placed (full cover or right panel)
+ *   - bgImage omitted   -> Type A: solid DOM bg / Type B: DOM fill on right
  *
  * BIFF format: x=0.57 left-aligned, hero=copywrite tagline (42pt),
  *              sub=proposal description (14pt)
@@ -13,15 +17,17 @@
  * @param {Object} sl - pptxgenjs slide object
  * @param {Object} pptx - pptxgenjs instance
  * @param {Object} opts
- * @param {string} opts.type - "A" (minimal) or "B" (cinematic)
+ * @param {string} opts.type - "A" (fullbleed) or "B" (split)
  * @param {string} opts.title - Hero tagline text (copywrite, NOT proposal title)
- * @param {string} [opts.subtitle] - Proposal description (e.g. "XX 서비스 제안")
- * @param {string} [opts.label] - Badge label text (e.g. "VIP Protocol Proposal")
+ * @param {string} [opts.subtitle] - Proposal description
+ * @param {string} [opts.label] - Badge label text
  * @param {string} [opts.companyName] - Company name
  * @param {string} [opts.date] - Date string
  * @param {Object} opts.palette - { DOM, SEC, ACC, DK, LT, CD, SB, TF }
- * @param {string} [opts.bgImage] - Base64 data for background image (Type B)
+ * @param {string} [opts.bgImage] - Background image path or base64 data
  */
+
+'use strict';
 
 const FN_XB = 'Pretendard ExtraBold';
 const FN_MD = 'Pretendard Medium';
@@ -30,193 +36,178 @@ const FN_TN = 'Pretendard Thin';
 const SW = 11.69;
 const SH = 8.27;
 
-// Shadow factories (AP-24: never share shadow objects)
+// Shadow factory (AP-24)
 const sdw = () => ({ type: 'outer', blur: 6, offset: 3, angle: 270, color: '000000', opacity: 0.15 });
 
-module.exports = function createCover(
-  sl,
-  pptx,
-  { type = 'A', title, subtitle, label, companyName, date, palette, bgImage }
-) {
-  if (!palette) throw new Error('cover: palette is required');
-  if (!title) throw new Error('cover: title is required');
+module.exports = function createCover(sl, pptx, opts) {
+  if (!opts.palette) throw new Error('cover: palette is required');
+  if (!opts.title) throw new Error('cover: title is required');
 
-  if (type === 'B') {
-    _coverCinematic(sl, pptx, { title, subtitle, label, companyName, date, palette, bgImage });
+  if (opts.type === 'B') {
+    _coverSplit(sl, pptx, opts);
   } else {
-    _coverMinimal(sl, pptx, { title, subtitle, label, companyName, date, palette, bgImage });
+    _coverFullbleed(sl, pptx, opts);
   }
 };
 
 // ---------------------------------------------------------------------------
-// Type A  "minimal" (BIFF left-aligned)
+// Type A  "fullbleed" — full background image + gradient overlay
 // ---------------------------------------------------------------------------
-function _coverMinimal(sl, pptx, { title, subtitle, label, companyName, date, palette }) {
-  const { DOM, SEC, ACC, DK } = palette;
+function _coverFullbleed(sl, pptx, { title, subtitle, label, companyName, date, palette, bgImage }) {
+  const { DOM } = palette;
+
+  if (bgImage) {
+    // Full-cover image
+    sl.background = { fill: 'FFFFFF' };
+    const imgArg = _imgArg(bgImage);
+    sl.addImage({
+      ...imgArg, x: 0, y: 0, w: SW, h: SH,
+      sizing: { type: 'cover', w: SW, h: SH },
+    });
+
+    // Left-to-right gradient overlay (DOM-based)
+    // Left side opaque for text readability, right side transparent for image
+    sl.addShape(pptx.shapes.RECTANGLE, {
+      x: 0, y: 0, w: SW, h: SH,
+      fill: {
+        type: 'gradient',
+        angle: 0,
+        stops: [
+          { position: 0,   color: DOM || '1A1A2E', transparency: 2 },
+          { position: 35,  color: DOM || '1A1A2E', transparency: 10 },
+          { position: 60,  color: DOM || '1A1A2E', transparency: 55 },
+          { position: 100, color: DOM || '1A1A2E', transparency: 92 },
+        ],
+      },
+      line: { type: 'none' },
+    });
+  } else {
+    // Fallback: solid DOM background (no image)
+    sl.background = { fill: DOM || '1A1A2E' };
+  }
+
+  // Text always white on fullbleed (dark overlay or solid DOM)
+  _renderText(sl, pptx, {
+    title, subtitle, label, companyName, date, palette,
+    darkBg: true,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Type B  "split" — left text (45%) + right image (55%)
+// ---------------------------------------------------------------------------
+function _coverSplit(sl, pptx, { title, subtitle, label, companyName, date, palette, bgImage }) {
+  const { DOM } = palette;
+  const splitX = SW * 0.45;   // 5.26"
+  const imgW   = SW - splitX; // 6.43"
 
   sl.background = { fill: 'FFFFFF' };
 
-  // -- Decorative gradient circles (behind text, rendered first) --
-  sl.addShape(pptx.shapes.OVAL, {
-    x: SW * 0.58, y: -1.2, w: 5.2, h: 5.2,
-    fill: { color: SEC, transparency: 75 },
-    line: { type: 'none' },
-  });
-  sl.addShape(pptx.shapes.OVAL, {
-    x: SW * 0.30, y: SH * 0.55, w: 4.8, h: 4.8,
-    fill: { color: ACC, transparency: 78 },
+  // Right panel: image or solid DOM
+  if (bgImage) {
+    const imgArg = _imgArg(bgImage);
+    sl.addImage({
+      ...imgArg, x: splitX, y: 0, w: imgW, h: SH,
+      sizing: { type: 'cover', w: imgW, h: SH },
+    });
+  } else {
+    sl.addShape(pptx.shapes.RECTANGLE, {
+      x: splitX, y: 0, w: imgW, h: SH,
+      fill: { color: DOM || '1A1A2E' },
+      line: { type: 'none' },
+    });
+  }
+
+  // Vertical divider line (thin DOM-colored)
+  sl.addShape(pptx.shapes.RECTANGLE, {
+    x: splitX - 0.015, y: 0, w: 0.03, h: SH,
+    fill: { color: DOM || '1A1A2E', transparency: 30 },
     line: { type: 'none' },
   });
 
-  // -- Badge label (BIFF: x=0.57) --
+  // Text on white left side
+  _renderText(sl, pptx, {
+    title, subtitle, label, companyName, date, palette,
+    darkBg: false,
+    maxTextW: splitX - 0.57 - 0.30,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Shared text renderer (BIFF left-aligned)
+// ---------------------------------------------------------------------------
+function _renderText(sl, pptx, { title, subtitle, label, companyName, date, palette, darkBg, maxTextW }) {
+  const { DOM, DK } = palette;
+  const textW = maxTextW || SW * 0.55;
+
+  // Color scheme based on background
+  const heroColor = darkBg ? 'FFFFFF' : (DK || '1A1A2E');
+  const subColor  = darkBg ? 'CCCCCC' : '888888';
+  const compColor = darkBg ? 'AAAAAA' : '999999';
+
+  // Badge label (BIFF: x=0.57)
   if (label) {
     const badgeW = _textWidth(label, 10) + 0.5;
     sl.addText(label, {
       x: 0.57, y: 2.43, w: badgeW, h: 0.34,
       fontSize: 10, fontFace: FN_MD, color: 'FFFFFF',
-      fill: { color: DOM, transparency: 15 },
+      fill: { color: DOM || '1A1A2E', transparency: 15 },
       rectRadius: 0.17, align: 'center', valign: 'middle',
       line: { type: 'none' },
       wrap: false, margin: 0,
     });
   }
 
-  // -- Hero tagline (BIFF: x=0.57, 42pt ExtraBold) --
+  // Hero tagline (BIFF: x=0.57, 42pt ExtraBold)
   sl.addText(title, {
-    x: 0.57, y: 2.91, w: SW * 0.55, h: 1.8,
+    x: 0.57, y: 2.91, w: textW, h: 1.8,
     fontSize: 42, fontFace: FN_XB,
-    color: DK || '1A1A2E',
+    color: heroColor,
     align: 'left', valign: 'top',
     lineSpacingMultiple: 1.25, wrap: true,
   });
 
-  // -- Subtitle / proposal description (BIFF: 14pt Thin) --
+  // Subtitle / proposal description (BIFF: 14pt Thin)
   if (subtitle || date) {
-    const subText = subtitle || date || '';
-    sl.addText(subText, {
-      x: 0.57, y: 4.83, w: SW * 0.55, h: 0.5,
+    sl.addText(subtitle || date || '', {
+      x: 0.57, y: 4.83, w: textW, h: 0.5,
       fontSize: 14, fontFace: FN_TN,
-      color: '888888',
+      color: subColor,
       align: 'left', valign: 'top',
       wrap: false, margin: 0,
     });
   }
 
-  // -- Decorative line above company --
+  // Decorative line above company
   sl.addShape(pptx.shapes.RECTANGLE, {
     x: 0.57, y: SH - 1.5, w: 2.0, h: 0.02,
-    fill: { color: DOM, transparency: 40 },
+    fill: { color: DOM || '1A1A2E', transparency: 40 },
     line: { type: 'none' },
   });
 
-  // -- Company name (BIFF: bottom-left) --
+  // Company name (BIFF: bottom-left)
   if (companyName) {
     sl.addText(companyName, {
       x: 0.57, y: SH - 1.1, w: 3.5, h: 0.40,
       fontSize: 12, fontFace: FN_MD,
-      color: '999999',
+      color: compColor,
       align: 'left', valign: 'middle',
       wrap: false, margin: 0,
     });
   }
-}
-
-// ---------------------------------------------------------------------------
-// Type B  "cinematic" (BIFF left-aligned, dark bg)
-// ---------------------------------------------------------------------------
-function _coverCinematic(sl, pptx, { title, subtitle, label, companyName, date, palette, bgImage }) {
-  const { DOM, SEC, ACC, DK } = palette;
-
-  // -- Background: image + dark overlay, or solid dark --
-  sl.background = { fill: DK || '0D0D1A' };
-  if (bgImage) {
-    const imgArg = (bgImage.startsWith('image/') || bgImage.startsWith('data:'))
-      ? { data: bgImage } : { path: bgImage };
-    sl.addImage({ ...imgArg, x: 0, y: 0, w: SW, h: SH, sizing: { type: 'cover', w: SW, h: SH } });
-    sl.addShape(pptx.shapes.RECTANGLE, {
-      x: 0, y: 0, w: SW, h: SH,
-      fill: { color: '000000', transparency: 35 },
-      line: { type: 'none' },
-    });
-  }
-
-  // -- Decorative brand graphic circles (right side) --
-  sl.addShape(pptx.shapes.OVAL, {
-    x: SW * 0.55, y: -1.5, w: 5.5, h: 5.5,
-    fill: { color: DOM, transparency: 75 },
-    line: { type: 'none' },
-  });
-  sl.addShape(pptx.shapes.OVAL, {
-    x: SW * 0.65, y: SH * 0.45, w: 4.0, h: 4.0,
-    fill: { color: SEC, transparency: 80 },
-    line: { type: 'none' },
-  });
-  sl.addShape(pptx.shapes.OVAL, {
-    x: SW * 0.75, y: SH * 0.20, w: 2.5, h: 2.5,
-    fill: { color: ACC, transparency: 70 },
-    line: { type: 'none' },
-  });
-
-  // -- Badge label (BIFF: x=0.57) --
-  if (label) {
-    const badgeW = _textWidth(label, 10) + 0.5;
-    sl.addText(label, {
-      x: 0.57, y: 2.43, w: badgeW, h: 0.34,
-      fontSize: 10, fontFace: FN_MD, color: 'FFFFFF',
-      fill: { color: DOM, transparency: 15 },
-      rectRadius: 0.17, align: 'center', valign: 'middle',
-      line: { type: 'none' },
-      wrap: false, margin: 0,
-    });
-  }
-
-  // -- Hero tagline (BIFF: x=0.57, 42pt, white) --
-  sl.addText(title, {
-    x: 0.57, y: 2.91, w: SW * 0.55, h: 1.8,
-    fontSize: 42, fontFace: FN_XB, color: 'FFFFFF',
-    align: 'left', valign: 'top',
-    lineSpacingMultiple: 1.25, wrap: true,
-  });
-
-  // -- Subtitle / proposal description (BIFF: 14pt) --
-  if (subtitle || date) {
-    const subText = subtitle || date || '';
-    sl.addText(subText, {
-      x: 0.57, y: 4.83, w: SW * 0.55, h: 0.5,
-      fontSize: 14, fontFace: FN_TN, color: 'CCCCCC',
-      align: 'left', valign: 'top',
-      wrap: false, margin: 0,
-    });
-  }
-
-  // -- Decorative line (above company) --
-  sl.addShape(pptx.shapes.RECTANGLE, {
-    x: 0.57, y: SH - 1.5, w: 2.0, h: 0.02,
-    fill: { color: DOM, transparency: 40 },
-    line: { type: 'none' },
-  });
-
-  // -- Company name (BIFF: bottom-left) --
-  if (companyName) {
-    sl.addText(companyName, {
-      x: 0.57, y: SH - 1.1, w: 3.5, h: 0.40,
-      fontSize: 12, fontFace: FN_MD, color: 'AAAAAA',
-      align: 'left', valign: 'middle',
-      wrap: false, margin: 0,
-    });
-  }
-
-  // -- Bottom-left subtle decorative circle --
-  sl.addShape(pptx.shapes.OVAL, {
-    x: -1.5, y: SH * 0.6, w: 4.0, h: 4.0,
-    fill: { color: ACC, transparency: 85 },
-    line: { type: 'none' },
-  });
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** Resolve image argument for pptxgenjs (base64 data vs file path) */
+function _imgArg(bgImage) {
+  if (bgImage.startsWith('data:') || bgImage.startsWith('image/')) {
+    return { data: bgImage };
+  }
+  return { path: bgImage };
+}
 
 /**
  * Rough text width estimator (inches) for badge sizing.
@@ -229,7 +220,7 @@ function _textWidth(text, fontSize) {
     if (/[\u3000-\u303F\u3130-\u318F\uAC00-\uD7AF\u4E00-\u9FFF\uFF00-\uFFEF]/.test(ch)) {
       units += 1.4;
     } else {
-      units += 0.55;
+      units += 0.78;
     }
   }
   const charWidth = 0.075 * (fontSize / 10);

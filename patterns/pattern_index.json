@@ -7,37 +7,37 @@
 
   "patterns": [
     {
-      "id": "cover-minimal",
+      "id": "cover-fullbleed",
       "type": "cover",
       "variant": "A",
-      "name": "minimal",
-      "description": "흰 배경에 추상 그라디언트 도형(원형), 좌측 정렬 제목, 뱃지 스타일 회사명",
-      "when_to_use": "기업 제안서, B2B 공식 문서, 깔끔한 톤이 필요한 경우",
+      "name": "fullbleed",
+      "description": "풀블리드 배경 이미지 + DOM 좌→우 그라데이션 오버레이 + BIFF 좌측 정렬 텍스트. 이미지 없으면 DOM 솔리드 배경 폴백",
+      "when_to_use": "임팩트와 몰입감이 필요한 제안서, 고품질 사진 소재가 있을 때, 프리미엄 제안서",
       "adaptation_rules": {
         "title_length": {
           "short": "제목 폰트 42-48pt, 여백 넉넉히 유지",
-          "long": "제목 폰트 32-36pt, 부제 20pt 이하로 축소"
+          "long": "제목 폰트 32-36pt, 2줄까지 허용"
         },
-        "logo_placement": "좌상단 또는 우하단 뱃지 형태",
-        "color_flex": "그라디언트 도형 색상을 브랜드 Primary로 교체 가능",
-        "image_option": "추상 도형 대신 브랜드 패턴 텍스처 사용 가능"
+        "image_requirement": "고해상도 사진 권장 — 없으면 DOM 솔리드 배경으로 자동 폴백",
+        "gradient_direction": "좌→우: 좌측(텍스트 영역) 불투명 → 우측(이미지 노출) 투명",
+        "color_flex": "오버레이 색상은 palette.DOM 자동 적용"
       }
     },
     {
-      "id": "cover-cinematic",
+      "id": "cover-split",
       "type": "cover",
       "variant": "B",
-      "name": "cinematic",
-      "description": "다크 배경 또는 풀블리드 이미지 + 어두운 오버레이, 중앙 정렬 흰색 텍스트, 이벤트 테마 그래픽",
-      "when_to_use": "스포츠 이벤트, 대형 행사, 역동적이고 임팩트 있는 첫인상이 필요한 경우",
+      "name": "split",
+      "description": "좌측 45% 흰 배경에 BIFF 텍스트 + 우측 55% 이미지 패널, 수직 분할. 이미지 없으면 우측 DOM 솔리드 패널",
+      "when_to_use": "텍스트 가독성이 최우선일 때, 이미지 품질과 무관하게 안정적 표지가 필요한 경우, 기업 제안서",
       "adaptation_rules": {
         "title_length": {
-          "short": "제목 54-60pt 대형, 자간 넓게(tracking +100)",
-          "long": "제목 36-42pt, 2줄까지 허용"
+          "short": "제목 폰트 42pt, 좌측 패널 내 여백 여유",
+          "long": "제목 폰트 32-36pt, maxTextW 제한으로 자동 줄바꿈"
         },
-        "image_requirement": "고해상도 행사/이벤트 사진 필수 — 없으면 다크 그라디언트로 대체",
-        "overlay_opacity": "이미지 위 40-60% 블랙 오버레이",
-        "color_flex": "오버레이 색상을 브랜드 다크 컬러로 교체 가능"
+        "split_ratio": "좌 45% : 우 55% 고정. 수직 DOM 분할선(0.03\") 포함",
+        "image_requirement": "우측 패널에 이미지 cover 크롭 — 없으면 DOM 솔리드 채움",
+        "color_flex": "좌측 배경 흰색 고정, 우측 이미지 또는 DOM"
       }
     },
 
@@ -274,7 +274,7 @@
     "professional": {
       "description": "격식 있고 신뢰감을 주는 톤",
       "recommended_patterns": {
-        "cover": ["cover-minimal"],
+        "cover": ["cover-fullbleed", "cover-split"],
         "divider": ["divider-center", "divider-sidebar"],
         "body": ["body-card-grid", "body-text-visual-split"],
         "highlight": ["highlight-split-impact"],
@@ -284,7 +284,7 @@
     "dynamic": {
       "description": "역동적이고 에너지 넘치는 톤",
       "recommended_patterns": {
-        "cover": ["cover-cinematic"],
+        "cover": ["cover-fullbleed", "cover-split"],
         "divider": ["divider-image-split", "divider-brand-graphic"],
         "body": ["body-banner-cards", "body-card-grid"],
         "highlight": ["highlight-image-overlay-message", "highlight-dark-keywords"],
@@ -294,7 +294,7 @@
     "formal": {
       "description": "공식적이고 절제된 톤",
       "recommended_patterns": {
-        "cover": ["cover-minimal"],
+        "cover": ["cover-fullbleed", "cover-split"],
         "divider": ["divider-center"],
         "body": ["body-text-visual-split", "body-card-grid"],
         "highlight": ["highlight-split-impact"],
@@ -304,7 +304,7 @@
     "creative": {
       "description": "창의적이고 시각적으로 풍부한 톤",
       "recommended_patterns": {
-        "cover": ["cover-cinematic"],
+        "cover": ["cover-fullbleed", "cover-split"],
         "divider": ["divider-image-split", "divider-brand-graphic"],
         "body": ["body-banner-cards", "body-profile-cards"],
         "highlight": ["highlight-image-overlay-message", "highlight-dark-keywords"],
@@ -314,7 +314,7 @@
     "premium": {
       "description": "고급스럽고 절제된 프리미엄 톤",
       "recommended_patterns": {
-        "cover": ["cover-cinematic"],
+        "cover": ["cover-fullbleed", "cover-split"],
         "divider": ["divider-brand-graphic", "divider-center"],
         "body": ["body-text-visual-split", "body-profile-cards"],
         "highlight": ["highlight-image-overlay-message"],
@@ -324,7 +324,7 @@
     "warm": {
       "description": "따뜻하고 친근한 톤",
       "recommended_patterns": {
-        "cover": ["cover-minimal"],
+        "cover": ["cover-fullbleed", "cover-split"],
         "divider": ["divider-sidebar", "divider-image-split"],
         "body": ["body-profile-cards", "body-card-grid"],
         "highlight": ["highlight-dark-keywords", "highlight-split-impact"],
@@ -415,8 +415,8 @@
         "rule": "cover-ending-match",
         "description": "표지와 마무리 슬라이드는 동일 계열 패턴 사용",
         "pairs": {
-          "cover-minimal": ["ending-minimal-clean", "ending-brand-color"],
-          "cover-cinematic": ["ending-cinematic-closing", "ending-brand-color"]
+          "cover-fullbleed": ["ending-cinematic-closing", "ending-brand-color"],
+          "cover-split": ["ending-minimal-clean", "ending-brand-color"]
         }
       },
       {

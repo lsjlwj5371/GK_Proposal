@@ -136,7 +136,7 @@ function renderDarkKeywords(sl, pptx, opts) {
   // Bottom badge row (KPI-style, with left vertical bar)
   const badgeCount = badges.length;
   if (badgeCount > 0) {
-    const badgeY = CB_Y + CB_H - 1.40;
+    const badgeY = CB_Y + CB_H - 2.00;
     const badgeH = 1.20;
     const badgeGap = 0.15;
     const badgeW = (CB_W - CB_PAD * 2 - badgeGap * (badgeCount - 1)) / badgeCount;
@@ -148,7 +148,7 @@ function renderDarkKeywords(sl, pptx, opts) {
       sl.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
         x, y: badgeY, w: badgeW, h: badgeH,
         rectRadius: 0.08,
-        fill: { color: c(palette.SEC || '1E2A3A') },
+        fill: { color: c(palette.DK || '1A1A1A') },
         line: { type: 'none' },
         shadow: sdw(),
       });
