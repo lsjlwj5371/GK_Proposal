@@ -26,9 +26,10 @@ description: "GroundK(그라운드케이) 제안서 PPT 자동 생성 스킬. /g
 | **생성프롬프트 가이드** | `references/01_생성프롬프트_가이드.md` | STEP 1~4 워크플로우, 색상 시스템, 헤더 좌표, 코드 생성 가이드 | Phase 3 시작 전 |
 | **제작시나리오 가이드** | `references/02_제작시나리오_가이드.md` | 43개 템플릿 설명, 조합 패턴, 품질 체크리스트 | Phase 2 템플릿 매핑 시 |
 | **디자인 DNA** | `references/03_design_dna.md` | 플랫 디자인 원칙, 고스트 넘버, 필 뱃지, DNA 색상 상수, 도형 규격 | Phase 3 코드 작성 시 |
+| **컴포넌트 카탈로그** | `references/05_component_catalog.md` | 마스터 PPT 기반 37개 컴포넌트 ID, 변형 규칙, 색상 치환 | Phase 3 코드 작성 시 |
 | **패턴 인덱스** | `patterns/pattern_index.json` | 콘텐츠 유형 -> 추천 패턴 매핑, 분위기별 패턴 선택 | Phase 2 레이아웃 선택 시 |
 
-> **가이드 파일에 모든 디자인 규격(좌표, 폰트, 색상 등)이 포함되어 있습니다.** 별도의 마스터 템플릿 파일(.pptx)은 필요하지 않습니다.
+> **가이드 파일에 디자인 규격(좌표, 폰트, 색상 등)이 포함되어 있습니다.** 추가로, 마스터 컴포넌트 PPT(`assets/component_master.pptx`)에서 파서로 추출한 정확한 디자인 수치가 `assets/component_catalog.json`에 저장되어 있습니다.
 
 ## 코드 패턴 라이브러리 (검증된 레이아웃 컴포넌트)
 
@@ -40,7 +41,7 @@ description: "GroundK(그라운드케이) 제안서 PPT 자동 생성 스킬. /g
 |---------|------|------|------|
 | **표지** | `patterns/components/cover.js` | A(풀블리드+그라데이션), B(좌우분할) | 표지 페이지 -- bgImage 필수 권장 |
 | **간지** | `patterns/components/divider.js` | A(센터), B(사이드바), C(이미지분할), D(브랜드그래픽) | 챕터 구분 |
-| **카드 그리드** | `patterns/components/card_grid.js` | default, dark, kpi, image-overlay | 본문 카드 레이아웃 |
+| **카드 그리드** | `patterns/components/card_grid.js` | default, dark, kpi, image-overlay | 본문 카드 레이아웃 (AP-21: 평면+그림자, accent bar 금지) |
 | **강조 본문** | `patterns/components/highlight_body.js` | dark-keywords, image-overlay-message, split-impact | 클라이맥스 -- addHeader OOXML 버그, 수동 구현 필수 |
 | **마무리** | `patterns/components/ending.js` | A(미니멀), B(시네마틱), C(브랜드컬러) | 감사/다짐 페이지 |
 
@@ -97,13 +98,13 @@ cardGrid(sl, pptx, {
 
 ### 컴포넌트 AP 준수 현황 (v2 리팩토링 완료)
 
-모든 컴포넌트가 AP-01~AP-27을 준수하도록 리팩토링되었습니다. **5개 컴포넌트 모두 사용 가능합니다.**
+모든 컴포넌트가 AP-01~AP-33을 준수하도록 리팩토링되었습니다. **5개 컴포넌트 모두 사용 가능합니다.**
 
 | 컴포넌트 | v2 변경사항 |
 |---------|-----------|
 | **cover.js** | v3: A(풀블리드+그라데이션), B(좌우분할)로 전면 교체. 장식 도형 제거, bgImage 중심 설계. 이미지 없을 시 DOM 솔리드 폴백 |
 | **divider.js** | `charSpacing` 제거(AP-12), `line:{type:'none'}`, `wrap:false`, subText 파라미터 추가 |
-| **card_grid.js** | 상단 accent bar 제거(AP-21) -> 좌측 수직 바, 이모지 제거(AP-14), `sdw()` 팩토리, ghostNum 지원 |
+| **card_grid.js** | 모든 accent bar 제거(AP-21 전면 금지) -> 평면+그림자만, 이모지 제거(AP-14), `sdw()` 팩토리, ghostNum 지원 |
 | **highlight_body.js** | addHeader 제거 -> 수동 헤더 렌더링, API 변경(badges/pillars), `line:{type:'none'}`. v3: 배지 fill을 DK로 변경(AP-28), 배지-인사이트 겹침 해소(AP-29) |
 | **ending.js** | 히어로=약속카피/서브=감사합니다 올바른 순서, `charSpacing` 제거, promiseText 필수 |
 
@@ -186,7 +187,7 @@ sl.addImage({ data: iconData, x: 1.0, y: 2.0, w: 0.5, h: 0.5 });
 
 ### Phase 3: PPT 코드 생성
 **-> Read: `phases/phase3_code_generation.md`** (좌표, Content Box, 폰트 규격)
-**-> Read: `phases/phase3_anti_patterns.md`** (AP-01~AP-22 -- 반드시 읽을 것!)
+**-> Read: `phases/phase3_anti_patterns.md`** (AP-01~AP-33 -- 반드시 읽을 것!)
 **-> Read: `phases/phase3_fill_rate.md`** (여백 기준, 카드 밀도, pptxgenjs 효과)
 
 ### Phase 3.5: 자체 검수

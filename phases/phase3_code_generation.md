@@ -195,5 +195,32 @@ const col3_x3 = col3_x2 + col3W + CB_GAP;
 4. 생성된 파일 경로를 사용자에게 전달
 
 > **Phase 3 코드 작성 전, 반드시 다음 파일들을 Read하세요:**
-> - `phases/phase3_anti_patterns.md` -- AP-01~AP-22 안티패턴 규칙
+> - `phases/phase3_anti_patterns.md` -- AP-01~AP-33 안티패턴 규칙
 > - `phases/phase3_fill_rate.md` -- Fill-Rate, 카드 밀도, pptxgenjs 효과 가이드
+> - `references/05_component_catalog.md` -- 마스터 PPT 기반 컴포넌트 카탈로그 (37개 요소)
+
+## 컴포넌트 마스터 기반 디자인 시스템
+
+디자인 수치(좌표, 색상, 폰트 크기, 그림자 등)는 **마스터 컴포넌트 PPT**에서 파서로 추출한 정확값을 사용한다.
+
+**핵심 파일:**
+| 파일 | 역할 |
+|------|------|
+| `assets/component_master.pptx` | 디자인 원본 (사용자 제작) |
+| `scripts/pptx_parser.js` | PPT XML → JSON 변환 파서 |
+| `assets/component_catalog.json` | 파서 출력 (정확한 수치) |
+| `references/05_component_catalog.md` | 컴포넌트 ID + 변형 규칙 문서 |
+
+**사용 방법:**
+```javascript
+// 카탈로그에서 컴포넌트 수치 참조
+const catalog = require('./assets/component_catalog.json');
+const slide1 = catalog.slides[0];  // C01: 텍스트 박스 + 카드 + 뱃지
+
+// 해당 슬라이드의 도형 수치를 기반으로 코드 생성
+// 예: 카드 도형의 rectRadius, shadow, fill 등을 그대로 사용
+```
+
+**색상 치환:** 카탈로그의 색상값은 샘플용이므로, Phase 1에서 추출한 클라이언트 팔레트로 역할 매핑하여 교체한다.
+
+**컴포넌트 마스터 업데이트 시:** 새 PPT가 제공되면 `node scripts/pptx_parser.js assets/component_master.pptx assets/component_catalog.json` 실행하여 카탈로그를 재생성한다.

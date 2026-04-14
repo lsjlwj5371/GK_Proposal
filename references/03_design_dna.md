@@ -240,7 +240,7 @@ sl.addText('핵심 인사이트 메시지를 여기에 작성합니다.', {
   rectRadius: 0.06,
   align: 'left',
   valign: 'middle',
-  margin: [0, 12, 0, 12],
+  margin: 0,
   line: { type: "none" }
 });
 ```
@@ -258,30 +258,32 @@ sl.addText('핵심 인사이트 메시지를 여기에 작성합니다.', {
 
 ---
 
-## 9. 좌측 수직 바 (Left-Side Vertical Bar)
+## 9. 카드 디자인 원칙 (AP-21 전면 금지 반영)
 
-카드의 시각적 구분을 위한 좌측 세로 강조 바. **AP-21에 의해 상단 가로 accent bar는 금지**.
+**모든 형태의 accent bar(상단 가로, 좌측 세로)를 금지한다.** 카드는 평면 도형 + 그림자만으로 구성한다.
 
 ```javascript
-// 좌측 수직 바 (카드 좌측에 배치)
-sl.addShape(pptx.shapes.RECTANGLE, {
-  x: cardX,
-  y: cardY + 0.10,
-  w: 0.04,                // 얇은 세로 바
-  h: cardH - 0.20,        // 카드 높이에서 상하 여백 제외
-  fill: { color: ACC },
+// ✅ 올바른 카드 디자인 (평면 + 그림자)
+sl.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
+  x: cardX, y: cardY, w: cardW, h: cardH,
+  fill: { color: CD },        // 밝은 배경 카드
+  rectRadius: 0.08,
+  shadow: sdw(),               // 표준 그림자로 입체감
   line: { type: "none" }
 });
+
+// ❌ 금지: 좌측 세로 바
+// ❌ 금지: 상단 가로 바
+// ❌ 금지: 카드 외곽선 (border)
 ```
 
-| 항목 | 규격 |
-|------|------|
-| 너비 | 0.04" |
-| 높이 | 카드 높이 - 상하 패딩 |
-| 위치 | 카드 좌측 변 |
-| 색상 | ACC |
+| 구분 | 허용 | 금지 |
+|------|------|------|
+| 입체감 | shadow (표준/강조) | accent bar (상단/좌측) |
+| 구분감 | 색상 차이 (CD/LT/WHITE) | 외곽선 (border/outline) |
+| 시각 앵커 | 카드 내부 아이콘/번호 | 외부 장식 도형 |
 
-> **AP-21**: 카드 상단에 얇은 가로 accent bar를 배치하지 않는다. 시각적 구분이 필요하면 좌측 수직 바를 사용한다.
+> **컴포넌트 마스터 참조**: `assets/component_catalog.json`의 CARD-01 수치를 기준으로 카드를 생성한다.
 
 ---
 
