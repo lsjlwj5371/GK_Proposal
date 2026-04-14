@@ -80,12 +80,7 @@ function renderDefaultCard(sl, pptx, { x, y, w, h, card, palette }) {
     shadow: sdw(),
   });
 
-  // Left vertical bar (AP-21: replaces top accent bar)
-  sl.addShape(pptx.shapes.RECTANGLE, {
-    x, y: y + 0.10, w: 0.04, h: h - 0.20,
-    fill: { color: palette.ACC || palette.DOM || '3366CC' },
-    line: { type: 'none' },
-  });
+  // AP-21: No accent bar (flat card + shadow only)
 
   let contentY = y + PAD;
 
@@ -213,12 +208,7 @@ function renderKpiCard(sl, pptx, { x, y, w, h, card, palette }) {
     shadow: sdw(),
   });
 
-  // Left vertical bar (AP-21)
-  sl.addShape(pptx.shapes.RECTANGLE, {
-    x, y: y + 0.10, w: 0.04, h: h - 0.20,
-    fill: { color: palette.ACC || palette.DOM || '3366CC' },
-    line: { type: 'none' },
-  });
+  // AP-21: No accent bar (flat card + shadow only)
 
   let contentY = y + 0.10;
 

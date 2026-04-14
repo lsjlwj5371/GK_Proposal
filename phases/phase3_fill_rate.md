@@ -168,7 +168,56 @@ sl.addShape(pptx.shapes.RECTANGLE, {
 **경고**: `line: { width: 0 }` 는 사용 금지. width를 0으로 설정해도 **얇은 테두리가 렌더링**된다.
 반드시 `line: { type: 'none' }` 만 사용할 것. 이를 위반하면 QA 위반(AP-line)으로 처리한다.
 
-**6. 이미지 플레이스홀더 표기 규칙**:
-- 이미지가 들어가야 하는 위치에는 코드 주석으로 `// [IMAGE: 이스포츠 경기장 전경]` 형태로 표시
-- 실제 이미지 파일이 없으므로, 해당 영역에는 SEC 또는 LT 색상의 플레이스홀더 도형을 배치
-- 플레이스홀더 도형 중앙에 작은 텍스트로 "이미지 영역" 표시
+**6. 이미지/지도 플레이스홀더 표기 규칙**:
+
+이미지가 들어가야 하는 위치에는 **시각적으로 명확한 플레이스홀더**를 배치하여 사용자가 교체할 수 있도록 한다.
+
+**기본 플레이스홀더 패턴**:
+```javascript
+// 플레이스홀더 배경 (밝은 색 + 대시 없는 테두리)
+sl.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
+  x, y, w, h,
+  fill: { color: palette.LT || 'EDF4F7' },
+  line: { type: 'none' },
+  rectRadius: 0.08,
+});
+// 아이콘 (이미지 아이콘 SVG가 있으면 사용, 없으면 텍스트)
+sl.addText('Image Area', {
+  x, y: y + h/2 - 0.15, w, h: 0.30,
+  fontSize: 10, fontFace: FN_MD, color: palette.TG || '999999',
+  align: 'center', valign: 'middle',
+  wrap: false, margin: 0,
+});
+// 코드 주석으로 이미지 설명
+// [IMAGE: 교통약자 이동 서비스 현장 사진]
+```
+
+**지도 플레이스홀더** (지역 데이터가 있는 페이지):
+```javascript
+// 지도는 사용자가 직접 삽입하는 것을 전제로, 큰 플레이스홀더 배치
+sl.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
+  x, y, w, h,
+  fill: { color: palette.CD || 'F5F8FA' },
+  line: { type: 'none' },
+  rectRadius: 0.08,
+});
+sl.addText('Map Area\n(지도 이미지 삽입)', {
+  x, y: y + h/2 - 0.30, w, h: 0.60,
+  fontSize: 11, fontFace: FN_MD, color: palette.TG || '999999',
+  align: 'center', valign: 'middle',
+  wrap: true,
+});
+// [MAP: 서울시 자치구별 교통약자 분포 지도]
+```
+
+**규칙:**
+1. 코드 주석으로 `// [IMAGE: 설명]` 또는 `// [MAP: 설명]` 형태로 표시 필수
+2. 플레이스홀더 영역에는 LT 또는 CD 색상의 밝은 배경 도형 배치
+3. 중앙에 "Image Area" 또는 "Map Area" 텍스트 (AP-14: 이모지 금지)
+4. **빈 공간을 플레이스홀더로 채움**: 콘텐츠가 부족한 영역에 관련 이미지 플레이스홀더를 배치하여 Fill Rate 확보
+5. **지역 데이터가 있는 페이지**에서는 지도 플레이스홀더를 적극 활용 (지도는 사용자가 삽입)
+
+**빈 공간 대응 -- 폰트 확대와 플레이스홀더 병용**:
+- 카드 내 텍스트가 공간 대비 작으면: 폰트 +2~4pt 확대 우선
+- 카드/콘텐츠 옆에 빈 영역이 있으면: 관련 이미지 플레이스홀더 배치
+- 두 방법을 병용하여 **Fill Rate 65% 이상** 달성
