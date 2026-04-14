@@ -103,7 +103,7 @@
       "type": "body",
       "variant": "standard",
       "name": "card-grid",
-      "description": "2-4열 카드 그리드, 촘촘한 패딩, 상단 액센트 바",
+      "description": "2-4열 균등 카드 그리드, 평면+그림자, accent bar 금지 (AP-21)",
       "when_to_use": "동등한 중요도의 항목을 나열할 때 (서비스 목록, 팀 역할, 기능 비교)",
       "adaptation_rules": {
         "column_count": {
@@ -113,9 +113,87 @@
           "5_plus": "상단 3열 + 하단 2열 등 2행 분할"
         },
         "card_height": "콘텐츠 양에 따라 균일 높이 유지, 최소 150px",
-        "accent_element": "좌측 세로 thick bar (0.08~0.14\" 폭, 카드 높이 전체) 또는 번호/아이콘만 강조 (바 없음)",
+        "accent_element": "평면 카드 + 그림자만 사용, accent bar 금지 (AP-21)",
         "icon_option": "각 카드 상단에 40-48px 아이콘 배치 가능",
         "text_density": "카드당 제목(18pt) + 본문 2-3줄(12-14pt)"
+      }
+    },
+    {
+      "id": "body-weighted-grid",
+      "type": "body",
+      "variant": "standard",
+      "name": "weighted-grid",
+      "description": "비중(weight)에 비례하여 카드 크기가 달라지는 비대칭 그리드. 이미지 오버레이 + 대형 % 숫자 앵커 지원",
+      "when_to_use": "항목별 비중/비율이 다를 때 (과업 분석, 예산 배분, 서비스 비중)",
+      "fill_rate_expected": "88~92%",
+      "adaptation_rules": {
+        "weight_source": "각 항목의 비중(%)/중요도를 weight로 부여",
+        "row_count": "자동 결정 (1~3개 항목=1행, 4~6=2행, 7+=3행) 또는 수동 지정",
+        "style": "'overlay' (이미지 배경+반투명 오버레이) 또는 'solid' (단색 카드)",
+        "percent_anchor": "카드 우측 하단에 대형 숫자(28~54pt) 표시",
+        "min_items": 2,
+        "max_items": 10
+      }
+    },
+    {
+      "id": "body-flow-chain",
+      "type": "body",
+      "variant": "standard",
+      "name": "flow-chain",
+      "description": "원형/필/번호 노드가 화살표로 연결된 프로세스 흐름도",
+      "when_to_use": "프로세스 흐름, 서비스 체인, 단계별 진행, 업무 분야 나열",
+      "fill_rate_expected": "30~40% (다른 패턴과 조합 필수)",
+      "adaptation_rules": {
+        "style": "'circle' (원형 노드), 'pill' (캡슐형), 'numbered' (번호 스텝)",
+        "direction": "'horizontal' (기본) 또는 'vertical'",
+        "node_count": "최적 5~9개, 최대 12개",
+        "highlight": "특정 노드에 highlight:true로 강조",
+        "combination": "headline_band + flow_chain + card_grid/comparison_columns 3단 조합 권장"
+      }
+    },
+    {
+      "id": "body-table-card",
+      "type": "body",
+      "variant": "standard",
+      "name": "table-card",
+      "description": "좌측 색상 라벨 배지 + 우측 텍스트의 테이블형 수평 행 나열",
+      "when_to_use": "카테고리별 대응 방안, 보안 항목별 대책, 체크리스트형 정보",
+      "fill_rate_expected": "85~90%",
+      "adaptation_rules": {
+        "style": "'badge' (좌측 색상 라벨) 또는 'icon' (좌측 아이콘 원형)",
+        "row_count": "3~7행 최적, 최대 10행",
+        "label_width": "기본 1.10인치, 라벨 텍스트 길이에 따라 조정",
+        "content_format": "문자열 또는 불릿 배열"
+      }
+    },
+    {
+      "id": "body-comparison-columns",
+      "type": "body",
+      "variant": "standard",
+      "name": "comparison-columns",
+      "description": "얇은 구분선으로 분리된 비교 컬럼. 카드 배경 없이 텍스트 중심",
+      "when_to_use": "차별점/강점 비교, 옵션 대조, Before/After, 서비스 구분",
+      "fill_rate_expected": "78~85%",
+      "adaptation_rules": {
+        "column_count": "2~4개 최적",
+        "divider_style": "'line' (세로 구분선), 'none', 'card' (배경 있는 카드형)",
+        "content": "category(선택) + title + accent_line + body",
+        "highlight": "특정 컬럼에 highlight:true로 DOM 색상 강조"
+      }
+    },
+    {
+      "id": "body-headline-band",
+      "type": "body",
+      "variant": "composite",
+      "name": "headline-band",
+      "description": "전폭 메시지 밴드(상단) + 남은 영역에 다른 레이아웃 조합. 핵심 카피를 먼저 강조한 뒤 세부 내용 전개",
+      "when_to_use": "슬라이드 핵심 메시지를 크게 선언하고 아래에 근거/세부 항목 배치",
+      "fill_rate_expected": "85~90% (조합 패턴에 따라)",
+      "adaptation_rules": {
+        "band_style": "'subtle' (연회색 배경), 'bold' (DOM 배경), 'transparent' (배경 없음)",
+        "band_height": "자동 (subtext 유무에 따라 0.80~1.20인치)",
+        "bold_parts": "헤드라인 내 특정 단어만 색상/굵기 강조 가능",
+        "combination": "반환되는 remainingZone에 flow_chain, comparison_columns, card_grid 등 배치"
       }
     },
     {
@@ -276,7 +354,7 @@
       "recommended_patterns": {
         "cover": ["cover-fullbleed", "cover-split"],
         "divider": ["divider-center", "divider-sidebar"],
-        "body": ["body-card-grid", "body-text-visual-split"],
+        "body": ["body-card-grid", "body-table-card", "body-comparison-columns", "body-text-visual-split"],
         "highlight": ["highlight-split-impact"],
         "ending": ["ending-minimal-clean"]
       }
@@ -286,7 +364,7 @@
       "recommended_patterns": {
         "cover": ["cover-fullbleed", "cover-split"],
         "divider": ["divider-image-split", "divider-brand-graphic"],
-        "body": ["body-banner-cards", "body-card-grid"],
+        "body": ["body-weighted-grid", "body-flow-chain", "body-headline-band", "body-banner-cards"],
         "highlight": ["highlight-image-overlay-message", "highlight-dark-keywords"],
         "ending": ["ending-cinematic-closing"]
       }
@@ -296,7 +374,7 @@
       "recommended_patterns": {
         "cover": ["cover-fullbleed", "cover-split"],
         "divider": ["divider-center"],
-        "body": ["body-text-visual-split", "body-card-grid"],
+        "body": ["body-table-card", "body-comparison-columns", "body-card-grid", "body-text-visual-split"],
         "highlight": ["highlight-split-impact"],
         "ending": ["ending-minimal-clean", "ending-brand-color"]
       }
@@ -306,7 +384,7 @@
       "recommended_patterns": {
         "cover": ["cover-fullbleed", "cover-split"],
         "divider": ["divider-image-split", "divider-brand-graphic"],
-        "body": ["body-banner-cards", "body-profile-cards"],
+        "body": ["body-weighted-grid", "body-flow-chain", "body-headline-band", "body-profile-cards"],
         "highlight": ["highlight-image-overlay-message", "highlight-dark-keywords"],
         "ending": ["ending-cinematic-closing", "ending-brand-color"]
       }
@@ -316,7 +394,7 @@
       "recommended_patterns": {
         "cover": ["cover-fullbleed", "cover-split"],
         "divider": ["divider-brand-graphic", "divider-center"],
-        "body": ["body-text-visual-split", "body-profile-cards"],
+        "body": ["body-weighted-grid", "body-comparison-columns", "body-text-visual-split", "body-profile-cards"],
         "highlight": ["highlight-image-overlay-message"],
         "ending": ["ending-brand-color", "ending-cinematic-closing"]
       }
@@ -326,7 +404,7 @@
       "recommended_patterns": {
         "cover": ["cover-fullbleed", "cover-split"],
         "divider": ["divider-sidebar", "divider-image-split"],
-        "body": ["body-profile-cards", "body-card-grid"],
+        "body": ["body-card-grid", "body-headline-band", "body-table-card", "body-profile-cards"],
         "highlight": ["highlight-dark-keywords", "highlight-split-impact"],
         "ending": ["ending-brand-color", "ending-minimal-clean"]
       }
@@ -336,75 +414,99 @@
   "content_type_recommendations": {
     "kpi_data": {
       "description": "KPI 수치, 성과 데이터, 실적 요약",
-      "primary": "body-banner-cards",
-      "alternatives": ["highlight-dark-keywords", "body-card-grid"],
-      "rationale": "배너에 핵심 수치를 크게 표시하고 하단 카드로 세부 항목 전개"
+      "primary": "body-weighted-grid",
+      "alternatives": ["body-banner-cards", "body-card-grid"],
+      "rationale": "비중에 비례한 비대칭 카드 + 대형 % 숫자 앵커로 수치 강조"
     },
     "service_overview": {
       "description": "서비스 소개, 기능 목록, 제공 항목",
       "primary": "body-card-grid",
-      "alternatives": ["body-text-visual-split"],
+      "alternatives": ["body-table-card", "body-comparison-columns"],
       "rationale": "동등 중요도 항목을 카드로 균등 나열하여 일목요연하게 전달"
     },
     "team_introduction": {
       "description": "팀 소개, 인력 구성, 조직도",
       "primary": "body-profile-cards",
-      "alternatives": ["body-card-grid"],
+      "alternatives": ["body-card-grid", "body-table-card"],
       "rationale": "프로필 사진과 직함을 시각적으로 배치하여 신뢰감 부여"
     },
     "location_logistics": {
       "description": "위치 안내, 동선 계획, 교통 운영 계획",
       "primary": "body-text-visual-split",
-      "alternatives": ["body-banner-cards"],
-      "rationale": "좌측 텍스트 설명 + 우측 지도/동선도로 직관적 전달"
+      "alternatives": ["body-headline-band", "body-banner-cards"],
+      "rationale": "좌측 텍스트 설명 + 우측 지도/동선도로 직관적 전달. split_text_visual.js 사용"
     },
     "vision_mission": {
       "description": "비전, 미션, 핵심 가치, 경영 이념",
       "primary": "highlight-dark-keywords",
-      "alternatives": ["highlight-image-overlay-message"],
+      "alternatives": ["highlight-image-overlay-message", "body-headline-band"],
       "rationale": "키워드 뱃지로 핵심 가치를 시각적으로 각인"
     },
     "brand_promise": {
       "description": "브랜드 약속, 선언문, 슬로건",
       "primary": "highlight-image-overlay-message",
-      "alternatives": ["highlight-dark-keywords"],
+      "alternatives": ["highlight-dark-keywords", "body-headline-band"],
       "rationale": "풀블리드 이미지 + 선언적 카피로 감성적 임팩트 극대화"
     },
     "problem_solution": {
       "description": "문제 제기-해결 방안, 현황-개선, Before-After",
-      "primary": "highlight-split-impact",
-      "alternatives": ["body-text-visual-split"],
-      "rationale": "상하 대비 구조로 문제와 해결을 시각적으로 분리"
+      "primary": "body-comparison-columns",
+      "alternatives": ["highlight-split-impact", "body-text-visual-split"],
+      "rationale": "비교 컬럼으로 문제와 해결을 시각적으로 대비"
     },
     "process_workflow": {
       "description": "프로세스, 워크플로우, 단계별 진행",
-      "primary": "body-text-visual-split",
+      "primary": "body-flow-chain",
+      "alternatives": ["body-headline-band", "body-text-visual-split"],
+      "rationale": "원형 노드+화살표 흐름도로 직관적 프로세스 전달. headline_band + flow_chain 조합 권장"
+    },
+    "task_analysis": {
+      "description": "과업 분석, 업무 범위, 서비스 비중",
+      "primary": "body-weighted-grid",
       "alternatives": ["body-card-grid", "body-banner-cards"],
-      "rationale": "텍스트 단계 설명 + 우측 플로우 다이어그램 조합"
+      "rationale": "비중에 비례한 비대칭 그리드로 과업별 중요도를 시각화"
+    },
+    "security_contingency": {
+      "description": "보안 대책, 위기 대응, 항목별 대응 방안",
+      "primary": "body-table-card",
+      "alternatives": ["body-card-grid", "body-text-visual-split"],
+      "rationale": "좌측 색상 라벨 + 우측 대응 내용의 테이블형 행 배치"
+    },
+    "differentiation": {
+      "description": "차별점, 강점, 경쟁 우위 비교",
+      "primary": "body-comparison-columns",
+      "alternatives": ["body-headline-band", "body-card-grid"],
+      "rationale": "headline_band + comparison_columns 조합으로 상단 선언 + 하단 비교"
+    },
+    "strategy_expansion": {
+      "description": "전략 방향, 확장 계획, 운영 계획",
+      "primary": "body-text-visual-split",
+      "alternatives": ["body-headline-band", "body-card-grid"],
+      "rationale": "좌측 전략 섹션 나열 + 우측 다이어그램/지도"
     },
     "event_highlight": {
       "description": "이벤트 하이라이트, 행사 성과, 현장 사진",
-      "primary": "body-banner-cards",
-      "alternatives": ["highlight-image-overlay-message"],
-      "rationale": "배너 영역에 현장 사진, 하단 카드에 성과 수치 배치"
+      "primary": "body-weighted-grid",
+      "alternatives": ["body-banner-cards", "highlight-image-overlay-message"],
+      "rationale": "비중별 이미지 오버레이 카드로 행사 성과를 시각적으로 구성"
     },
     "comparison_table": {
       "description": "비교표, 옵션 비교, 장단점 대조",
-      "primary": "body-card-grid",
-      "alternatives": ["body-text-visual-split"],
-      "rationale": "카드 그리드로 항목별 비교를 시각적으로 나란히 배치"
+      "primary": "body-comparison-columns",
+      "alternatives": ["body-card-grid", "body-table-card"],
+      "rationale": "구분선 기반 비교 컬럼으로 항목별 대조"
     },
     "timeline_schedule": {
       "description": "타임라인, 일정표, 마일스톤",
-      "primary": "body-text-visual-split",
-      "alternatives": ["body-banner-cards"],
-      "rationale": "좌측 일정 리스트 + 우측 타임라인 다이어그램"
+      "primary": "body-flow-chain",
+      "alternatives": ["body-text-visual-split", "body-banner-cards"],
+      "rationale": "번호 스텝 노드(numbered)로 타임라인 시각화"
     },
     "cost_budget": {
       "description": "비용, 예산, 견적, 가격표",
-      "primary": "body-card-grid",
-      "alternatives": ["body-text-visual-split", "body-banner-cards"],
-      "rationale": "항목별 카드 배치 또는 총액 배너 + 세부 항목 카드"
+      "primary": "body-weighted-grid",
+      "alternatives": ["body-table-card", "body-card-grid"],
+      "rationale": "비중별 비대칭 카드 + % 앵커로 예산 배분 시각화"
     }
   },
 
@@ -430,9 +532,10 @@
       },
       {
         "rule": "body-variation",
-        "description": "본문 슬라이드는 2-3종류 패턴을 교차 사용하여 단조로움 방지",
-        "min_variants": 2,
-        "max_variants": 3
+        "description": "본문 슬라이드는 3-5종류 패턴을 교차 사용하여 단조로움 방지. card_grid만 반복 사용 금지",
+        "min_variants": 3,
+        "max_variants": 5,
+        "anti_pattern": "card_grid만으로 모든 본문을 구성하면 Fill Rate 65% 수준에 머물게 됨"
       }
     ]
   }

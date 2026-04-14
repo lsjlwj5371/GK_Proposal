@@ -41,9 +41,22 @@ description: "GroundK(그라운드케이) 제안서 PPT 자동 생성 스킬. /g
 |---------|------|------|------|
 | **표지** | `patterns/components/cover.js` | A(풀블리드+그라데이션), B(좌우분할) | 표지 페이지 -- bgImage 필수 권장 |
 | **간지** | `patterns/components/divider.js` | A(센터), B(사이드바), C(이미지분할), D(브랜드그래픽) | 챕터 구분 |
-| **카드 그리드** | `patterns/components/card_grid.js` | default, dark, kpi, image-overlay | 본문 카드 레이아웃 (AP-21: 평면+그림자, accent bar 금지) |
+| **카드 그리드** | `patterns/components/card_grid.js` | default, dark, kpi, image-overlay | 본문 균등 카드 레이아웃 (AP-21: 평면+그림자, accent bar 금지) |
 | **강조 본문** | `patterns/components/highlight_body.js` | dark-keywords, image-overlay-message, split-impact | 클라이맥스 -- addHeader OOXML 버그, 수동 구현 필수 |
 | **마무리** | `patterns/components/ending.js` | A(미니멀), B(시네마틱), C(브랜드컬러) | 감사/다짐 페이지 |
+
+### 레이아웃 패턴 (Fill Rate 80% 달성용 -- 콘텐츠 유형별 선택)
+
+| 레이아웃 | 경로 | 용도 | Fill Rate |
+|---------|------|------|-----------|
+| **비대칭 그리드** | `patterns/layouts/weighted_grid.js` | 비중별 크기가 다른 카드 배치 (과업분석, 예산배분) | 88~92% |
+| **프로세스 흐름** | `patterns/layouts/flow_chain.js` | 원형/캡슐 노드 + 화살표 (프로세스, 서비스 체인) | 단독 30%, 조합 82~88% |
+| **테이블 카드** | `patterns/layouts/table_card.js` | 좌측 라벨 + 우측 텍스트 행 (보안대책, 항목별 대응) | 85~90% |
+| **텍스트+비주얼** | `patterns/layouts/split_text_visual.js` | 텍스트 섹션 + 지도/다이어그램 분할 | 83~88% |
+| **비교 컬럼** | `patterns/layouts/comparison_columns.js` | 구분선 기반 비교/차별점 표시 | 78~85% |
+| **헤드라인 밴드** | `patterns/layouts/headline_band.js` | 상단 메시지 밴드 + 하단 서브 레이아웃 조합 | 85~90% |
+
+> **Fill Rate 80% 달성 핵심**: card_grid 하나만으로는 65% 수준. 콘텐츠 유형에 맞는 레이아웃 패턴을 선택하고, headline_band + flow_chain 같은 조합을 적극 활용해야 80%+ 달성 가능.
 
 ### 패턴 선택 흐름
 
